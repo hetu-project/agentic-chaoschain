@@ -590,3 +590,100 @@ func (c *ChainIndexer) queryAccount(ctx context.Context, index uint64, address s
 	}
 	return &act, err
 }
+
+func (c *ChainIndexer) getProposals(page int, pageSize int) ([]Proposal, uint64, error) {
+	var proposals []Proposal
+	err := c.db.Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&proposals).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	// get total proposals
+	var total uint64
+	err = c.db.Model(&Proposal{}).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return proposals, total, nil
+}
+
+func (c *ChainIndexer) getProposalById(proposalId uint64) (Proposal, error) {
+	var proposal Proposal
+	err := c.db.Where("id = ?", proposalId).First(&proposal).Error
+	if err != nil {
+		return Proposal{}, err
+	}
+	return proposal, nil
+}
+
+func (c *ChainIndexer) getDiscussionByProposal(proposal uint64, page int, pageSize int) ([]Discussion, uint64, error) {
+	var discussions []Discussion
+	err := c.db.Where("proposal = ?", proposal).Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&discussions).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	var total uint64
+	err = c.db.Model(&Discussion{}).Where("proposal = ?", proposal).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return discussions, total, nil
+}
+
+func (c *ChainIndexer) getGrantById(grantId uint64) (Grant, error) {
+	var grant Grant
+	err := c.db.Where("id = ?", grantId).First(&grant).Error
+	if err != nil {
+		return Grant{}, err
+	}
+	return grant, nil
+}
+
+func (c *ChainIndexer) getGrants(page int, pageSize int) ([]Grant, uint64, error) {
+	var grants []Grant
+	err := c.db.Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&grants).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	var total uint64
+	err = c.db.Model(&Grant{}).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return grants, total, nil
+}
+
+func (c *ChainIndexer) getProposalVotesByProposal(proposal uint64, page int, pageSize int) ([]ProposalVote, error) {
+	var votes []ProposalVote
+	err := c.db.Where("proposal = ?", proposal).Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&votes).Error
+	if err != nil {
+		return nil, err
+	}
+	return votes, nil
+}
+
+func (c *ChainIndexer) getGrantVotesByGrant(grant uint64, page int, pageSize int) ([]GrantVote, error) {
+	var votes []GrantVote
+	err := c.db.Where("account_index = ?", grant).Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&votes).Error
+	if err != nil {
+		return nil, err
+	}
+	return votes, nil
+}
+
+func (c *ChainIndexer) getProposalVotesByVoter(voter string, page int, pageSize int) ([]ProposalVote, error) {
+	var votes []ProposalVote
+	err := c.db.Where("voter_address = ?", voter).Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&votes).Error
+	if err != nil {
+		return nil, err
+	}
+	return votes, nil
+}
+
+func (c *ChainIndexer) getGrantVotesByVoter(voter string, page int, pageSize int) ([]GrantVote, error) {
+	var votes []GrantVote
+	err := c.db.Where("voter_address = ?", voter).Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&votes).Error
+	if err != nil {
+		return nil, err
+	}
+	return votes, nil
+}

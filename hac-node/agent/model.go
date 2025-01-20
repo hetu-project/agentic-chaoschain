@@ -1,8 +1,16 @@
 package agent
 
+// sqlite models
+
 type Height struct {
 	Id     uint64 `gorm:"primaryKey" json:"id"`
 	Height uint64 `json:"height"`
+}
+
+type Validator struct {
+	Id        uint64 `gorm:"primaryKey" json:"index"`
+	Address   string `json:"address"`
+	Character string `json:"character"`
 }
 
 type Proposal struct {
