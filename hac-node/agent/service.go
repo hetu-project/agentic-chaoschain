@@ -150,9 +150,10 @@ func (s *Service) handleGetDiscussions(c *gin.Context) {
 }
 
 type GetProposalsReq struct {
-	PropoaslId uint64 `json:"proposalId"`
-	Page       int    `json:"page"`
-	PageSize   int    `json:"pageSize"`
+	ProposalId      uint64 `json:"proposalId"`
+	ProposerAddress string `json:"proposer"`
+	Page            int    `json:"page"`
+	PageSize        int    `json:"pageSize"`
 }
 type GetProposalResponse struct {
 	Proposals []ProposalInfo `json:"proposals"`
@@ -169,8 +170,8 @@ func (s *Service) handleGetProposals(c *gin.Context) {
 		return
 	}
 
-	if requestData.PropoaslId != 0 {
-		proposalInfo, err := s.getProposalInfoById(requestData.PropoaslId)
+	if requestData.ProposalId != 0 {
+		proposalInfo, err := s.getProposalInfoById(requestData.ProposalId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -179,8 +180,16 @@ func (s *Service) handleGetProposals(c *gin.Context) {
 		c.JSON(http.StatusOK, response)
 		return
 	}
-
-	proposals, proposalTotal, err := s.indexer.getProposals(requestData.Page, requestData.PageSize)
+	proposalTotal := uint64(0)
+	proposals := make([]Proposal, 0)
+	if requestData.ProposerAddress != "" {
+		proposals, proposalTotal, err = s.indexer.getProposalsByProposerAddr(requestData.ProposerAddress, requestData.Page, requestData.PageSize)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+	proposals, proposalTotal, err = s.indexer.getProposals(requestData.Page, requestData.PageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

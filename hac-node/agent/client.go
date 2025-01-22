@@ -281,7 +281,7 @@ func (c *ChainIndexer) handleEventGrant(ctx context.Context, event abci.Event, h
 		c.logger.Error("decode event fail", "event", event)
 		return
 	}
-	account := Grant{
+	grant := Grant{
 		Id:              ev.Validator,
 		Address:         ev.Address,
 		Height:          uint64(height),
@@ -290,8 +290,18 @@ func (c *ChainIndexer) handleEventGrant(ctx context.Context, event abci.Event, h
 		ProposerAddress: ev.ProposerAddress,
 		Grant:           ev.Grant,
 	}
-	if err := c.db.Save(&account).Error; err != nil {
+	if err := c.db.Save(&grant).Error; err != nil {
 		c.logger.Error("save account fail", "err", err)
+	}
+
+	val := Validator{
+		Id:       ev.Validator,
+		Address:  ev.Address,
+		Stake:    ev.Amount,
+		AgentUrl: ev.AgentUrl,
+	}
+	if err := c.db.Save(&val).Error; err != nil {
+		c.logger.Error("save validator fail", "err", err)
 	}
 }
 
@@ -613,6 +623,20 @@ func (c *ChainIndexer) getProposalById(proposalId uint64) (Proposal, error) {
 		return Proposal{}, err
 	}
 	return proposal, nil
+}
+
+func (c *ChainIndexer) getProposalsByProposerAddr(proposerAddr string, page int, pageSize int) ([]Proposal, uint64, error) {
+	var proposals []Proposal
+	err := c.db.Where("proposer_address = ?", proposerAddr).Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&proposals).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	var total uint64
+	err = c.db.Model(&Proposal{}).Where("proposer_address = ?", proposerAddr).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return proposals, total, nil
 }
 
 func (c *ChainIndexer) getDiscussionByProposal(proposal uint64, page int, pageSize int) ([]Discussion, uint64, error) {

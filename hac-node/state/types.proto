@@ -7,14 +7,15 @@ option go_package="../state";
 message StateHeader {
     string chainId = 1;
     bytes hash = 2;
-    bytes rootHash = 4;
-    uint64 height = 5;
-    uint64 accountIdx = 6;
+    bytes rootHash = 3;
+    uint64 height = 4;
+    uint64 accountIdx = 5;
 }
 
 message Account {
     uint64 index = 1;
     bytes pubKey = 2;
-    uint64 stake = 4;
-    uint64 nonce = 6;
+    uint64 stake = 3;
+    uint64 nonce = 4;
+    string agentUrl = 5;  
 }

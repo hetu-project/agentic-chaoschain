@@ -683,7 +683,7 @@ func (s *State) Dicussion(tx *tx.DiscussionTx, validator uint64, checkOnly bool)
 	return
 }
 
-func (s *State) Grant(proposer uint64, pk []byte, amount uint64, code tx.VoteCode) (event *hac_types.EventGrant, err error) {
+func (s *State) Grant(proposer uint64, pk []byte, amount uint64, agentUrl string, code tx.VoteCode) (event *hac_types.EventGrant, err error) {
 	if code != txtypes.VoteGrantNewMember && code != txtypes.VoteRejectNewMember {
 		return nil, ErrTxVoteCodeInvalid
 	}
@@ -709,10 +709,11 @@ func (s *State) Grant(proposer uint64, pk []byte, amount uint64, code tx.VoteCod
 	}
 	if code != txtypes.VoteGrantNewMember {
 		a = &Account{
-			Index:  s.header.AccountIdx,
-			PubKey: pk,
-			Stake:  amount,
-			Nonce:  0,
+			Index:    s.header.AccountIdx,
+			PubKey:   pk,
+			Stake:    amount,
+			AgentUrl: agentUrl,
+			Nonce:    0,
 		}
 		event = &hac_types.EventGrant{
 			Validator:       s.header.AccountIdx,
@@ -720,15 +721,17 @@ func (s *State) Grant(proposer uint64, pk []byte, amount uint64, code tx.VoteCod
 			Amount:          amount,
 			Nonce:           0,
 			Grant:           false,
+			AgentUrl:        agentUrl,
 			ProposerIndex:   proposer,
 			ProposerAddress: proposerAcc.Address(),
 		}
 	} else {
 		a = &Account{
-			Index:  s.header.AccountIdx,
-			PubKey: pk,
-			Stake:  amount,
-			Nonce:  0,
+			Index:    s.header.AccountIdx,
+			PubKey:   pk,
+			Stake:    amount,
+			AgentUrl: agentUrl,
+			Nonce:    0,
 		}
 		event = &hac_types.EventGrant{
 			Validator:       a.Index,
@@ -736,6 +739,7 @@ func (s *State) Grant(proposer uint64, pk []byte, amount uint64, code tx.VoteCod
 			Amount:          amount,
 			Nonce:           a.Nonce,
 			Grant:           true,
+			AgentUrl:        agentUrl,
 			ProposerIndex:   proposer,
 			ProposerAddress: proposerAcc.Address(),
 		}

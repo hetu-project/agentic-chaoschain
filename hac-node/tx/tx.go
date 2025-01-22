@@ -21,6 +21,7 @@ type GrantTx struct {
 type GrantSt struct {
 	Statement string `json:"statement"`
 	Amount    uint64 `json:"amount"`
+	AgentUrl  string `json:"agentUrl"`
 	Pubkey    []byte `json:"pubkey"`
 }
 

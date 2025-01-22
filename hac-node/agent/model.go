@@ -8,9 +8,10 @@ type Height struct {
 }
 
 type Validator struct {
-	Id        uint64 `gorm:"primaryKey" json:"index"`
-	Address   string `json:"address"`
-	Character string `json:"character"`
+	Id       uint64 `gorm:"primaryKey" json:"index"`
+	Address  string `json:"address"`
+	Stake    uint64 `json:"stake"`
+	AgentUrl string `json:"agentUrl"`
 }
 
 type Proposal struct {

@@ -8,10 +8,11 @@ import (
 )
 
 type accountSt struct {
-	Index  uint64         `json:"index"`
-	PubKey ed25519.PubKey `json:"pubKey"`
-	Stake  uint64         `json:"stake"`
-	Nonce  uint64         `json:"nonce"`
+	Index    uint64         `json:"index"`
+	PubKey   ed25519.PubKey `json:"pubKey"`
+	Stake    uint64         `json:"stake"`
+	AgentUrl string         `json:"agentUrl"`
+	Nonce    uint64         `json:"nonce"`
 }
 
 func (a *Account) MarshalJSON() (dat []byte, err error) {
@@ -33,6 +34,7 @@ func (a *Account) UnmarshalJSON(dat []byte) (err error) {
 	a.Index = o.Index
 	a.PubKey = o.PubKey
 	a.Stake = o.Stake
+	a.AgentUrl = o.AgentUrl
 	a.Nonce = o.Nonce
 	return
 }
