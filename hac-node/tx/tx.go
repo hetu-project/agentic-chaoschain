@@ -22,6 +22,7 @@ type GrantSt struct {
 	Statement string `json:"statement"`
 	Amount    uint64 `json:"amount"`
 	AgentUrl  string `json:"agentUrl"`
+	Name      string `json:"name"`
 	Pubkey    []byte `json:"pubkey"`
 }
 

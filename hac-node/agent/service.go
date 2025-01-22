@@ -23,6 +23,8 @@ func NewService(ListenAddr string, indexer *ChainIndexer) *Service {
 	s.engine.POST("/getProposals", s.handleGetProposals)
 	s.engine.POST("/getDiscussions", s.handleGetDiscussions)
 	s.engine.POST("/getGrants", s.handleGetGrants)
+	s.engine.POST("/getAgents", s.handleGetAgents)
+	s.engine.POST("/getAgentDetail", s.handleGetAgentDetail)
 	return s
 }
 
@@ -49,6 +51,11 @@ type GrantInfo struct {
 	Votes []VoteInfo `json:"votes"`
 }
 
+type AgentInfo struct {
+	Agent     ValidatorAgent `json:"agent"`
+	Proposals []ProposalInfo `json:"proposals"`
+}
+
 type GetGrantsReq struct {
 	GrantId  uint64 `json:"grantId"`
 	Address  string `json:"address"`
@@ -59,6 +66,66 @@ type GetGrantsReq struct {
 type GetGrantResponse struct {
 	Grants []GrantInfo `json:"grants"`
 	Total  uint64      `json:"total"`
+}
+
+type GetAccountDetailReq struct {
+	Address string `json:"address"`
+}
+
+type GetAccountDetailResponse struct {
+	AgentInfo AgentInfo `json:"agentInfo"`
+}
+
+func (s *Service) handleGetAgentDetail(c *gin.Context) {
+	var response GetAccountDetailResponse
+	response.AgentInfo.Proposals = make([]ProposalInfo, 0)
+	var requestData GetAccountDetailReq
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	agent, err := s.indexer.getValidatorByAddress(requestData.Address)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if agent == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent not found"})
+		return
+	}
+	response.AgentInfo.Agent = *agent
+	proposals, _, err := s.indexer.getProposalsByProposerAddr(requestData.Address, 0, 1000)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	for _, proposal := range proposals {
+		proposalInfo, err := s.getProposalInfoById(proposal.Id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		response.AgentInfo.Proposals = append(response.AgentInfo.Proposals, proposalInfo)
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+type GetAccountsReq struct{}
+
+type GetAccountsResponse struct {
+	Agents []ValidatorAgent `json:"agents"`
+}
+
+func (s *Service) handleGetAgents(c *gin.Context) {
+	var response GetAccountsResponse
+	response.Agents = make([]ValidatorAgent, 0)
+	agents, err := s.indexer.getValidators()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	response.Agents = agents
+	c.JSON(http.StatusOK, response)
 }
 
 func (s *Service) handleGetGrants(c *gin.Context) {

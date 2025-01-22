@@ -2,12 +2,15 @@ package app
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 
 	"github.com/calehh/hac-app/agent"
 	"github.com/calehh/hac-app/config"
 	"github.com/calehh/hac-app/state"
 	"github.com/calehh/hac-app/tx"
 	"github.com/calehh/hac-app/tx/handler"
+	"github.com/calehh/hac-app/types"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	cmtlog "github.com/cometbft/cometbft/libs/log"
 	"github.com/cometbft/cometbft/store"
@@ -101,12 +104,30 @@ func (app *HACApp) registerQuerier() {
 func (app *HACApp) InitChain(_ context.Context, chain *abcitypes.RequestInitChain) (res *abcitypes.ResponseInitChain, err error) {
 	st := app.db.NewState()
 	st.SetChainId(chain.ChainId)
+	var appState types.GenesisAppState
+	err = json.Unmarshal(chain.AppStateBytes, &appState)
+	if err != nil {
+		app.logger.Error("InitChain unmarshal app state fail", "err", err)
+		return nil, err
+	}
+	agentInfoMap := make(map[string]types.AgentInfo)
+	for _, v := range appState.Agents {
+		agentInfoMap[v.Address] = v
+	}
 	for _, v := range chain.Validators {
 		var acnt state.Account
 		acnt.SetPubKey(v.PubKey.GetEd25519())
 		acnt.Stake = uint64(v.Power) * config.GWeiPerPower(0)
+		if info, ok := agentInfoMap[acnt.Address()]; ok {
+			acnt.AgentUrl = info.AgentUrl
+			acnt.Name = info.Name
+		}
+		app.logger.Info("InitChain", "validator", acnt.Address(), "agentUrl", acnt.AgentUrl, "name", acnt.Name)
 		err = st.AddAccount(&acnt)
 		if err != nil {
+			if errors.Is(err, state.ErrAccountAlreadyExists) {
+				continue
+			}
 			app.logger.Error("InitChain add account fail", "err", err)
 			return nil, err
 		}
@@ -115,6 +136,11 @@ func (app *HACApp) InitChain(_ context.Context, chain *abcitypes.RequestInitChai
 	_, err = st.Update()
 	if err != nil {
 		app.logger.Error("InitChain update state fail", "err", err)
+		return nil, err
+	}
+	err = st.SetManifest(appState.Manifest)
+	if err != nil {
+		app.logger.Error("InitChain set manifest fail", "err", err)
 		return nil, err
 	}
 	h, err = app.db.SetState(st)

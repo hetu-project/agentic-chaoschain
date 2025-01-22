@@ -7,18 +7,20 @@ type Height struct {
 	Height uint64 `json:"height"`
 }
 
-type Validator struct {
-	Id       uint64 `gorm:"primaryKey" json:"index"`
-	Address  string `json:"address"`
-	Stake    uint64 `json:"stake"`
-	AgentUrl string `json:"agentUrl"`
+type ValidatorAgent struct {
+	Id        uint64 `gorm:"primaryKey" json:"index"`
+	Address   string `json:"address"`
+	Stake     uint64 `json:"stake"`
+	AgentUrl  string `json:"agentUrl"`
+	Name      string `json:"name"`
+	SelfIntro string `json:"self_intro"`
 }
 
 type Proposal struct {
 	Id              uint64 `gorm:"primaryKey" json:"index"`
 	ProposerIndex   uint64 `json:"proposer_index"`
 	ProposerAddress string `json:"proposer_address"`
-	Data            []byte `json:"data"`
+	Data            string `json:"data"`
 	NewHeight       uint64 `json:"new_height"`
 	SettleHeight    uint64 `json:"settle_height"`
 	Status          uint64 `json:"status"`
@@ -60,6 +62,6 @@ type Discussion struct {
 	Proposal       uint64 `json:"proposal"`
 	SpeakerIndex   uint64 `json:"speaker_index"`
 	SpeakerAddress string `json:"speaker_address"`
-	Data           []byte `json:"data"`
+	Data           string `json:"data"`
 	Height         uint64 `json:"height"`
 }

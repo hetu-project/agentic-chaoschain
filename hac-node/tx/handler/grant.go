@@ -33,7 +33,7 @@ func (h *GrantTxHandler) handle(ctx context.Context, st *state.State, btx *tx.HA
 	wtx := btx.Tx.(*tx.GrantTx)
 	res = &abcitypes.ExecTxResult{}
 	for _, grant := range wtx.Grants {
-		event, err1 := st.Grant(btx.Validator, grant.Pubkey, grant.Amount, grant.AgentUrl, code)
+		event, err1 := st.Grant(btx.Validator, grant.Pubkey, grant.Amount, grant.AgentUrl, grant.Name, code)
 		if err1 != nil {
 			err = err1
 			return

@@ -29,6 +29,7 @@ type EventGrant struct {
 	Address         string `json:"address"`
 	Amount          uint64 `json:"amount"`
 	AgentUrl        string `json:"agentUrl"`
+	Name            string `json:"name"`
 	Nonce           uint64 `json:"nonce"`
 	Grant           bool   `json:"grant"`
 	ProposerIndex   uint64 `json:"proposerIndex"`
@@ -251,6 +252,7 @@ func EncodeEventGrant(event *EventGrant) abci.Event {
 			{Key: "proposer", Value: fmt.Sprintf("%v", event.ProposerIndex), Index: false},
 			{Key: "proposerAddress", Value: event.ProposerAddress, Index: false},
 			{Key: "agentUrl", Value: event.AgentUrl, Index: false},
+			{Key: "name", Value: event.Name, Index: false},
 		},
 	}
 }
@@ -295,6 +297,8 @@ func ParseEventGrant(originEvent abci.Event) *EventGrant {
 			event.ProposerAddress = v.Value
 		case "agentUrl":
 			event.AgentUrl = v.Value
+		case "name":
+			event.Name = v.Value
 		}
 	}
 	return event

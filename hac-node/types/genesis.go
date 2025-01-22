@@ -21,6 +21,17 @@ type GenesisValidator struct {
 	Name    string         `json:"name"`
 }
 
+type AgentInfo struct {
+	Address  string `json:"address"`
+	AgentUrl string `json:"agent_url"`
+	Name     string `json:"name"`
+}
+
+type GenesisAppState struct {
+	Agents   []AgentInfo `json:"agents"`
+	Manifest string      `json:"manifest"`
+}
+
 // GenesisDoc defines the initial conditions for a CometBFT blockchain, in particular its validator set.
 type GenesisDoc struct {
 	GenesisTime     time.Time                 `json:"genesis_time"`
@@ -70,3 +81,5 @@ func ExportGenesisFile(genesis *GenesisDoc, genFile string) error {
 
 const HACModuleName = "hac"
 const DefaultPower = 1000
+const DefaultStatement = "Learn! Build! Thrive!"
+const DefaultAgentUrl = "http://127.0.0.1:3000"

@@ -8,6 +8,7 @@ import (
 
 	"github.com/calehh/hac-app/crypto"
 	"github.com/calehh/hac-app/tx"
+	"github.com/calehh/hac-app/types"
 	"github.com/cometbft/cometbft/rpc/client/http"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +20,8 @@ type grantArguments struct {
 	Skey      string
 	Amount    uint64
 	Pubkey    string
+	Name      string
+	AgentUrl  string
 	Statement string
 	NoSend    bool
 	Sig       string
@@ -40,9 +43,11 @@ func init() {
 	grantCmd.Flags().StringVarP(&grantArgs.Skey, "skeyPath", "s", "./config/priv_validator_key.json", "private key path")
 	grantCmd.Flags().StringVarP(&grantArgs.Statement, "statement", "", "", "grant statement")
 	grantCmd.Flags().StringVarP(&grantArgs.Pubkey, "pubkey", "p", "", "new account pubkey")
-	grantCmd.Flags().Uint64VarP(&grantArgs.Amount, "Amount", "a", 0, "grant amout")
+	grantCmd.Flags().Uint64VarP(&grantArgs.Amount, "amount", "a", 0, "grant amout")
 	grantCmd.Flags().BoolVarP(&grantArgs.NoSend, "nosend", "", false, "not send transaction but print signature")
 	grantCmd.Flags().StringVarP(&grantArgs.Sig, "sig", "", "", "transaction signatures")
+	grantCmd.Flags().StringVarP(&grantArgs.Name, "name", "", "", "account name")
+	grantCmd.Flags().StringVarP(&grantArgs.AgentUrl, "agentUrl", "", "", "account agentUrl")
 }
 
 func grantRun(cmd *cobra.Command, args []string) {
@@ -76,11 +81,19 @@ func grantRun(cmd *cobra.Command, args []string) {
 		fmt.Printf("decode pubkey hex err:%v\n", err)
 		return
 	}
+	if grantArgs.Name == "" {
+		grantArgs.Name = hex.EncodeToString(pubkey)
+	}
+	if grantArgs.AgentUrl == "" {
+		grantArgs.AgentUrl = types.DefaultAgentUrl
+	}
 	stx := &tx.GrantTx{
 		Grants: []tx.GrantSt{
 			tx.GrantSt{
 				Statement: grantArgs.Statement,
 				Amount:    grantArgs.Amount,
+				AgentUrl:  grantArgs.AgentUrl,
+				Name:      grantArgs.Name,
 				Pubkey:    pubkey,
 			},
 		},

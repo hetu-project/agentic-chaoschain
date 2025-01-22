@@ -17,5 +17,6 @@ message Account {
     bytes pubKey = 2;
     uint64 stake = 3;
     uint64 nonce = 4;
-    string agentUrl = 5;  
+    string agentUrl = 5; 
+    string name = 6; 
 }

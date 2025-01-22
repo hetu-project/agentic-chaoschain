@@ -85,7 +85,22 @@ func initRun(cmd *cobra.Command, args []string) error {
 	}
 	pk = pk1
 	vals = append(vals, types.GenesisValidator{Address: pk.Address(), PubKey: pk, Power: types.DefaultPower})
+	agentInfos := make([]types.AgentInfo, 0)
 
+	for _, val := range vals {
+		agentInfos = append(agentInfos, types.AgentInfo{
+			Address:  val.Address.String(),
+			AgentUrl: types.DefaultAgentUrl,
+			Name:     val.Address.String(),
+		})
+	}
+
+	appState := types.GenesisAppState{
+		Agents:   agentInfos,
+		Manifest: types.DefaultStatement,
+	}
+
+	appStateJson, _ := json.MarshalIndent(appState, "", " ")
 	genFile := appConfig.GenesisFile()
 	appGenesis := &types.GenesisDoc{
 		GenesisTime:     genesisTime,
@@ -93,6 +108,7 @@ func initRun(cmd *cobra.Command, args []string) error {
 		ConsensusParams: cmttypes.DefaultConsensusParams(),
 		InitialHeight:   1,
 		Validators:      vals,
+		AppState:        appStateJson,
 	}
 	if err = types.ExportGenesisFile(appGenesis, genFile); err != nil {
 		return fmt.Errorf("Failed to export genesis file %v", err)

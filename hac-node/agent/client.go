@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/calehh/hac-app/state"
@@ -29,6 +31,7 @@ type Client interface {
 	CommentPropoal(ctx context.Context, proposal uint64, speaker string) (string, error)
 	AddProposal(ctx context.Context, proposal uint64, proposer string, text string) error
 	AddDiscussion(ctx context.Context, proposal uint64, speaker string, text string) error
+	GetSelfIntro(ctx context.Context) (string, error)
 }
 
 var _ Client = &MockClient{}
@@ -37,14 +40,43 @@ var _ Client = &ElizaClient{}
 type ElizaClient struct {
 	Url     string
 	AgentId string
-	Logger  cmtlog.Logger
+	logger  cmtlog.Logger
+}
+
+func (c *ElizaClient) GetSelfIntro(ctx context.Context) (string, error) {
+	agentUrl, err := url.JoinPath(c.Url, c.AgentId, "/selfintro")
+	if err != nil {
+		c.logger.Error("join url fail", "err", err)
+		return "", err
+	}
+	res, err := http.Get(agentUrl)
+	if err != nil {
+		c.logger.Error("get agent url fail", "err", err)
+		return "", err
+	}
+	buf, err := io.ReadAll(res.Body)
+	if err != nil {
+		c.logger.Error("read response body fail", "err", err)
+		return "", err
+	}
+	defer res.Body.Close()
+	type SelfIntro struct {
+		Character string `json:"character"`
+	}
+	var selfIntro SelfIntro
+	err = json.Unmarshal(buf, &selfIntro)
+	if err != nil {
+		c.logger.Error("unmarshal response body fail", "err", err)
+		return "", err
+	}
+	return selfIntro.Character, nil
 }
 
 func NewElizaClient(url string, logger cmtlog.Logger) (*ElizaClient, error) {
 	l := logger.With("module", "eliza")
 	client := &ElizaClient{
 		Url:    url,
-		Logger: l,
+		logger: l,
 	}
 	ids, err := client.GetAgentIds(context.Background())
 	if err != nil {
@@ -86,7 +118,7 @@ func (e *ElizaClient) GetAgentIds(ctx context.Context) ([]string, error) {
 }
 
 func (e *ElizaClient) IfGrantNewMember(ctx context.Context, validator uint64, proposer string, amount uint64, statement string) (bool, error) {
-	e.Logger.Info("IfGrantNewMember", "validator", validator, "proposer", proposer, "amount", amount, "statement", statement)
+	e.logger.Info("IfGrantNewMember", "validator", validator, "proposer", proposer, "amount", amount, "statement", statement)
 	url := fmt.Sprintf("%s/%s/votegrant", e.Url, e.AgentId)
 	body := fmt.Sprintf(`{"grantId":"%d","validatorAddress":"%s","text":"%s"}`, validator, proposer, statement)
 	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
@@ -96,16 +128,16 @@ func (e *ElizaClient) IfGrantNewMember(ctx context.Context, validator uint64, pr
 	defer res.Body.Close()
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		e.Logger.Error("read response body fail", "err", err)
+		e.logger.Error("read response body fail", "err", err)
 		return false, err
 	}
 	var vote VoteResponse
 	err = json.Unmarshal(bodyBytes, &vote)
 	if err != nil {
-		e.Logger.Error("unmarshal response body fail", "err", err)
+		e.logger.Error("unmarshal response body fail", "err", err)
 		return false, err
 	}
-	e.Logger.Info("vote grant", "validator", validator, "proposer", proposer, "vote", vote.Vote, "reason", vote.Reason)
+	e.logger.Info("vote grant", "validator", validator, "proposer", proposer, "vote", vote.Vote, "reason", vote.Reason)
 	if vote.Vote == "yes" {
 		return true, nil
 	}
@@ -113,7 +145,7 @@ func (e *ElizaClient) IfGrantNewMember(ctx context.Context, validator uint64, pr
 }
 
 func (e *ElizaClient) CommentPropoal(ctx context.Context, proposal uint64, speaker string) (string, error) {
-	e.Logger.Info("CommentPropoal", "proposal", proposal, "speaker", speaker)
+	e.logger.Info("CommentPropoal", "proposal", proposal, "speaker", speaker)
 	url := fmt.Sprintf("%s/%s/newdiscussion", e.Url, e.AgentId)
 	body := fmt.Sprintf(`{"proposalId":"%d","validatorAddress":"%s","text":"comment"}`, proposal, speaker)
 	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
@@ -123,15 +155,15 @@ func (e *ElizaClient) CommentPropoal(ctx context.Context, proposal uint64, speak
 	defer res.Body.Close()
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		e.Logger.Error("read response body fail", "err", err)
+		e.logger.Error("read response body fail", "err", err)
 		return "", err
 	}
-	e.Logger.Info("comment proposal", "proposal", proposal, "speaker", speaker, "comment", string(bodyBytes))
+	e.logger.Info("comment proposal", "proposal", proposal, "speaker", speaker, "comment", string(bodyBytes))
 	return string(bodyBytes), nil
 }
 
 func (e *ElizaClient) AddDiscussion(ctx context.Context, proposal uint64, speaker string, text string) error {
-	e.Logger.Info("AddDiscussion", "proposal", proposal, "speaker", speaker, "text", text)
+	e.logger.Info("AddDiscussion", "proposal", proposal, "speaker", speaker, "text", text)
 	url := fmt.Sprintf("%s/%s/discussion", e.Url, e.AgentId)
 	body := fmt.Sprintf(`{"proposalId":"%d","validatorAddress":"%s","text":"%s"}`, proposal, speaker, text)
 	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
@@ -139,12 +171,12 @@ func (e *ElizaClient) AddDiscussion(ctx context.Context, proposal uint64, speake
 		return err
 	}
 	defer res.Body.Close()
-	e.Logger.Info("add discussion", "proposal", proposal, "speaker", speaker, "text", text)
+	e.logger.Info("add discussion", "proposal", proposal, "speaker", speaker, "text", text)
 	return nil
 }
 
 func (e *ElizaClient) AddProposal(ctx context.Context, proposal uint64, proposer string, text string) error {
-	e.Logger.Info("AddProposal", "proposal", proposal, "proposer", proposer, "text", text)
+	e.logger.Info("AddProposal", "proposal", proposal, "proposer", proposer, "text", text)
 	url := fmt.Sprintf("%s/%s/proposal", e.Url, e.AgentId)
 	body := fmt.Sprintf(`{"proposalId":"%d","validatorAddress":"%s","text":"%s"}`, proposal, proposer, text)
 	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
@@ -152,7 +184,7 @@ func (e *ElizaClient) AddProposal(ctx context.Context, proposal uint64, proposer
 		return err
 	}
 	defer res.Body.Close()
-	e.Logger.Info("add proposal", "proposal", proposal, "proposer", proposer, "text", text)
+	e.logger.Info("add proposal", "proposal", proposal, "proposer", proposer, "text", text)
 	return nil
 }
 
@@ -162,7 +194,7 @@ type VoteResponse struct {
 }
 
 func (e *ElizaClient) IfAcceptProposal(ctx context.Context, proposal uint64, voter string) (bool, error) {
-	e.Logger.Info("IfAcceptProposal", "proposal", proposal, "voter", voter)
+	e.logger.Info("IfAcceptProposal", "proposal", proposal, "voter", voter)
 	url := fmt.Sprintf("%s/%s/voteproposal", e.Url, e.AgentId)
 	body := fmt.Sprintf(`{"proposalId":"%d","validatorAddress":"%s","text":"analyze proposal"}`, proposal, voter)
 	res, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(body)))
@@ -172,16 +204,16 @@ func (e *ElizaClient) IfAcceptProposal(ctx context.Context, proposal uint64, vot
 	defer res.Body.Close()
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		e.Logger.Error("read response body fail", "err", err)
+		e.logger.Error("read response body fail", "err", err)
 		return false, err
 	}
 	var vote VoteResponse
 	err = json.Unmarshal(bodyBytes, &vote)
 	if err != nil {
-		e.Logger.Error("unmarshal response body fail", "err", err)
+		e.logger.Error("unmarshal response body fail", "err", err)
 		return false, err
 	}
-	e.Logger.Info("vote proposal", "proposal", proposal, "voter", voter, "vote", vote.Vote, "reason", vote.Reason)
+	e.logger.Info("vote proposal", "proposal", proposal, "voter", voter, "vote", vote.Vote, "reason", vote.Reason)
 	if vote.Vote == "yes" {
 		return true, nil
 	}
@@ -193,6 +225,10 @@ func (e *ElizaClient) IfProcessProposal(ctx context.Context, proposer uint64, da
 }
 
 type MockClient struct {
+}
+
+func (m *MockClient) GetSelfIntro(ctx context.Context) (string, error) {
+	return "mock", nil
 }
 
 func (m *MockClient) AddDiscussion(ctx context.Context, proposal uint64, speaker string, text string) error {
@@ -230,7 +266,7 @@ type ChainIndexer struct {
 	db            *gorm.DB
 	cli           *comethttp.HTTP
 	eventHandlers map[string]eventHandler
-	eliza         *ElizaClient
+	elizaClients  map[string]Client
 }
 
 func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string) (*ChainIndexer, error) {
@@ -243,13 +279,14 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string) (*Cha
 	if err != nil {
 		return nil, err
 	}
-	if err := db.AutoMigrate(&Grant{}, &Discussion{}, &Proposal{}, &Height{}, &GrantVote{}, &ProposalVote{}).Error; err != nil {
+	if err := db.AutoMigrate(&Grant{}, &Discussion{}, &Proposal{}, &Height{}, &GrantVote{}, &ProposalVote{}, &ValidatorAgent{}).Error; err != nil {
 		return nil, err
 	}
 	h := Height{Id: 1}
 	if err = db.First(&h).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
+
 	c := ChainIndexer{
 		logger:        logger.With("module", "indexer"),
 		Url:           chainUrl,
@@ -257,6 +294,7 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string) (*Cha
 		db:            db,
 		cli:           cli,
 		eventHandlers: map[string]eventHandler{},
+		elizaClients:  make(map[string]Client),
 	}
 	c.eventHandlers = map[string]eventHandler{
 		hac_types.EventGrantType:          c.handleEventGrant,
@@ -294,11 +332,12 @@ func (c *ChainIndexer) handleEventGrant(ctx context.Context, event abci.Event, h
 		c.logger.Error("save account fail", "err", err)
 	}
 
-	val := Validator{
+	val := ValidatorAgent{
 		Id:       ev.Validator,
 		Address:  ev.Address,
 		Stake:    ev.Amount,
 		AgentUrl: ev.AgentUrl,
+		Name:     ev.Name,
 	}
 	if err := c.db.Save(&val).Error; err != nil {
 		c.logger.Error("save validator fail", "err", err)
@@ -315,7 +354,7 @@ func (c *ChainIndexer) handleEventDiscussion(ctx context.Context, event abci.Eve
 		Proposal:       ev.Proposal,
 		SpeakerIndex:   ev.Speaker,
 		SpeakerAddress: ev.SpeakerAddress,
-		Data:           ev.Data,
+		Data:           string(ev.Data),
 		Height:         uint64(height),
 	}
 	if err := c.db.Save(&discusstion).Error; err != nil {
@@ -355,7 +394,7 @@ func (c *ChainIndexer) handleEventProposal(ctx context.Context, event abci.Event
 		Id:              ev.ProposalIndex,
 		ProposerIndex:   ev.Proposer,
 		ProposerAddress: ev.ProposerAddress,
-		Data:            ev.Data,
+		Data:            string(ev.Data),
 		NewHeight:       uint64(height),
 		Status:          ev.Status,
 	}
@@ -499,6 +538,37 @@ func (c *ChainIndexer) handleVote(ctx context.Context, height int64) error {
 func (c *ChainIndexer) Start(ctx context.Context) {
 	var err error
 	ticker := time.NewTicker(time.Second)
+	time.Sleep(10 * time.Second)
+	res, err := c.cli.Validators(context.Background(), nil, nil, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, v := range res.Validators {
+		acc, err := c.queryAccount(ctx, 0, v.Address.String())
+		if err != nil {
+			log.Fatal(err)
+		}
+		if acc == nil {
+			log.Fatal("validator account not exist")
+		}
+		if err := c.db.Save(ValidatorAgent{
+			Id:       acc.Index,
+			Address:  acc.Address(),
+			Stake:    acc.Stake,
+			AgentUrl: acc.AgentUrl,
+			Name:     acc.Name,
+		}).Error; err != nil {
+			panic(err)
+		}
+	}
+
+	go func() {
+		for {
+			time.Sleep(10 * time.Second)
+			c.fillAgentSelfIntro()
+		}
+	}()
+
 	defer ticker.Stop()
 	for {
 		select {
@@ -557,6 +627,38 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 					continue
 				}
 				c.Height++
+			}
+		}
+	}
+}
+
+func (c *ChainIndexer) fillAgentSelfIntro() {
+	// find agent where self_intro is ""
+	var agents []ValidatorAgent
+	err := c.db.Where("self_intro = ?", "").Find(&agents).Error
+	if err != nil {
+		c.logger.Error("find agent fail", "err", err)
+		return
+	}
+	for _, a := range agents {
+		if a.AgentUrl != "" {
+			if _, ok := c.elizaClients[a.Address]; !ok {
+				client, err := NewElizaClient(a.AgentUrl, c.logger)
+				if err != nil {
+					c.logger.Error("new eliza client fail", "err", err)
+					continue
+				}
+				c.elizaClients[a.Address] = client
+			}
+			selfIntro, err := c.elizaClients[a.Address].GetSelfIntro(context.Background())
+			if err != nil {
+				c.logger.Error("get self intro fail", "err", err)
+				continue
+			}
+			a.SelfIntro = selfIntro
+			if err := c.db.Save(&a).Error; err != nil {
+				c.logger.Error("save agent fail", "err", err)
+				continue
 			}
 		}
 	}
@@ -660,6 +762,24 @@ func (c *ChainIndexer) getGrantById(grantId uint64) (Grant, error) {
 		return Grant{}, err
 	}
 	return grant, nil
+}
+
+func (c *ChainIndexer) getValidators() ([]ValidatorAgent, error) {
+	var validators []ValidatorAgent
+	err := c.db.Find(&validators).Error
+	if err != nil {
+		return nil, err
+	}
+	return validators, nil
+}
+
+func (c *ChainIndexer) getValidatorByAddress(address string) (*ValidatorAgent, error) {
+	var val ValidatorAgent
+	err := c.db.Where("address = ?", address).First(&val).Error
+	if err != nil {
+		return nil, err
+	}
+	return &val, nil
 }
 
 func (c *ChainIndexer) getGrants(page int, pageSize int) ([]Grant, uint64, error) {

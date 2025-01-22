@@ -49,8 +49,8 @@ func accountRun(cmd *cobra.Command, args []string) {
 		return
 	}
 	pk := ed25519.PubKey(act.PubKey[:])
-	actStr := fmt.Sprintf("nonce:%v index:%v pk:%v stake:%v addr:%v\n",
-		act.Nonce, act.Index, common.Bytes2Hex(act.PubKey), act.Stake, common.Bytes2Hex(pk.Address()[:]))
+	actStr := fmt.Sprintf("name:%s nonce:%v index:%v pk:%v stake:%v addr:%v agentUrl:%s\n",
+		act.Name, act.Nonce, act.Index, common.Bytes2Hex(act.PubKey), act.Stake, common.Bytes2Hex(pk.Address()[:]), act.AgentUrl)
 	fmt.Println(actStr)
 }
 

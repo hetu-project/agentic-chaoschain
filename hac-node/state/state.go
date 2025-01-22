@@ -52,6 +52,7 @@ var (
 	KeyProposalIndex         = "pi"
 	KeyDiscussionBody        = "d%v"
 	KeyDiscussionIndex       = "di"
+	KeyManifest              = "m"
 )
 
 var (
@@ -461,6 +462,22 @@ func (s *State) FindAccount(addr []byte) (acnt *Account, err error) {
 	return
 }
 
+func (s *State) SetManifest(manifest string) error {
+	_, err := s.db.Set([]byte(KeyManifest), []byte(manifest))
+	return err
+}
+
+func (s *State) GetManifest() (manifest string, err error) {
+	val, err := s.db.Get([]byte(KeyManifest))
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			return "", err
+		}
+	}
+	manifest = string(val)
+	return
+}
+
 func (s *State) ValidatorAccounts() (acounts []*Account, height uint64, err error) {
 	vals := s.validators
 	for _, val := range vals {
@@ -683,7 +700,7 @@ func (s *State) Dicussion(tx *tx.DiscussionTx, validator uint64, checkOnly bool)
 	return
 }
 
-func (s *State) Grant(proposer uint64, pk []byte, amount uint64, agentUrl string, code tx.VoteCode) (event *hac_types.EventGrant, err error) {
+func (s *State) Grant(proposer uint64, pk []byte, amount uint64, agentUrl, name string, code tx.VoteCode) (event *hac_types.EventGrant, err error) {
 	if code != txtypes.VoteGrantNewMember && code != txtypes.VoteRejectNewMember {
 		return nil, ErrTxVoteCodeInvalid
 	}
@@ -713,6 +730,7 @@ func (s *State) Grant(proposer uint64, pk []byte, amount uint64, agentUrl string
 			PubKey:   pk,
 			Stake:    amount,
 			AgentUrl: agentUrl,
+			Name:     name,
 			Nonce:    0,
 		}
 		event = &hac_types.EventGrant{
@@ -731,6 +749,7 @@ func (s *State) Grant(proposer uint64, pk []byte, amount uint64, agentUrl string
 			PubKey:   pk,
 			Stake:    amount,
 			AgentUrl: agentUrl,
+			Name:     name,
 			Nonce:    0,
 		}
 		event = &hac_types.EventGrant{
