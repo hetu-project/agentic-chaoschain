@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/calehh/hac-app/tx"
@@ -29,7 +30,10 @@ func NewService(ListenAddr string, indexer *ChainIndexer) *Service {
 }
 
 func (s *Service) Start() {
-	s.engine.Run(s.listenAddr)
+	err := s.engine.Run(s.listenAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type VoteInfo struct {
@@ -210,10 +214,9 @@ func (s *Service) handleGetDiscussions(c *gin.Context) {
 		response.Total = total
 		c.JSON(http.StatusOK, response)
 		return
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "proposalId is required"})
 	}
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusBadRequest, gin.H{"error": "proposalId is required"})
+	return
 }
 
 type GetProposalsReq struct {
@@ -255,11 +258,12 @@ func (s *Service) handleGetProposals(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-	}
-	proposals, proposalTotal, err = s.indexer.getProposals(requestData.Page, requestData.PageSize)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	} else {
+		proposals, proposalTotal, err = s.indexer.getProposals(requestData.Page, requestData.PageSize)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	response.Total = proposalTotal
