@@ -27,10 +27,10 @@ func NewService(ListenAddr string, indexer *ChainIndexer) *Service {
 	s.engine.POST("/grants", s.handleGetGrants)
 	s.engine.POST("/agents", s.handleGetAgents)
 	s.engine.POST("/agent-detail", s.handleGetAgentDetail)
+	s.engine.POST("/proposal-detail", s.handleGetProposalDetail)
 	s.engine.GET("/manifesto", s.handleGetManifesto)
 	s.engine.GET("/network-status", s.handleGetNetworkStatus)
 	s.engine.GET("/latest-blocks", s.handleGetLatestBlocks)
-	s.engine.POST("/proposal-detail", s.handleGetProposalDetail)
 	return s
 }
 
@@ -195,7 +195,7 @@ func (s *Service) handleGetLatestBlocks(c *gin.Context) {
 		Discussions: 0,
 	}
 	block := s.indexer.BlockStore.LoadBlock(s.indexer.Height)
-	if block != nil {
+	if block == nil {
 		c.JSON(http.StatusOK, response)
 		return
 	}
