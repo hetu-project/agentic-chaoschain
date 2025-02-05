@@ -173,11 +173,12 @@ func (s *Service) handleGetNetworkStatus(c *gin.Context) {
 }
 
 type BlockInfo struct {
-	Height      uint64 `json:"height"`
-	Proposer    string `json:"proposer"`
-	ProposerId  uint64 `json:"proposerId"`
-	ProposalId  int64  `json:"proposalId"`
-	Discussions uint64 `json:"discussions"`
+	Height          uint64 `json:"height"`
+	Proposer        string `json:"proposer"`
+	ProposerId      uint64 `json:"proposerId"`
+	ProposerAddress string `json:"proposerAddress"`
+	ProposalId      int64  `json:"proposalId"`
+	Discussions     uint64 `json:"discussions"`
 }
 
 type GetLatestBlocksResponse struct {
@@ -205,6 +206,7 @@ func (s *Service) handleGetLatestBlocks(c *gin.Context) {
 	}
 	info.Proposer = validator.Name
 	info.ProposerId = validator.Id
+	info.ProposerAddress = validator.Address
 
 	proposal, err := s.indexer.getProposalByHeight(uint64(s.indexer.Height))
 	if err != nil {

@@ -8,7 +8,7 @@ type Height struct {
 }
 
 type ValidatorAgent struct {
-	Id        uint64 `gorm:"primaryKey" json:"index"`
+	Id        uint64 `gorm:"primaryKey" json:"id"`
 	Address   string `json:"address"`
 	Stake     uint64 `json:"stake"`
 	AgentUrl  string `json:"agentUrl"`
@@ -17,7 +17,7 @@ type ValidatorAgent struct {
 }
 
 type Proposal struct {
-	Id              uint64 `gorm:"primaryKey" json:"index"`
+	Id              uint64 `gorm:"primaryKey" json:"id"`
 	ProposerIndex   uint64 `json:"proposer_index"`
 	ProposerAddress string `json:"proposer_address"`
 	Data            string `json:"data"`
@@ -25,11 +25,11 @@ type Proposal struct {
 	SettleHeight    uint64 `json:"settle_height"`
 	Status          uint64 `json:"status"`
 	CreateTimestamp int64  `json:"create_timestamp"`
-	ExpireTimestamp int64 `json:"expire_timestamp"`
+	ExpireTimestamp int64  `json:"expire_timestamp"`
 }
 
 type Grant struct {
-	Id              uint64 `gorm:"primaryKey" json:"index"`
+	Id              uint64 `gorm:"primaryKey" json:"id"`
 	Address         string `json:"address"`
 	Height          uint64 `json:"height"`
 	Stake           uint64 `json:"stake"`
@@ -60,10 +60,11 @@ type GrantVote struct {
 }
 
 type Discussion struct {
-	Id             uint64 `gorm:"primaryKey" json:"index"`
+	Id             uint64 `gorm:"primaryKey" json:"id"`
 	Proposal       uint64 `json:"proposal"`
 	SpeakerIndex   uint64 `json:"speaker_index"`
 	SpeakerAddress string `json:"speaker_address"`
+	SpeakerName    string `json:"speaker_name"`
 	Data           string `json:"data"`
 	Height         uint64 `json:"height"`
 }

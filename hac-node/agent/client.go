@@ -353,17 +353,27 @@ func (c *ChainIndexer) handleEventDiscussion(ctx context.Context, event abci.Eve
 		c.logger.Error("decode event fail", "event", event)
 		return
 	}
+	speaker, err := c.getValidatorByAddress(ev.SpeakerAddress)
+	if err != nil {
+		c.logger.Error("get validator fail", "err", err)
+		return
+	}
+	if speaker.Id == 0 {
+		c.logger.Error("speaker not found", "address", ev.SpeakerAddress)
+		return
+	}
 	discusstion := Discussion{
 		Proposal:       ev.Proposal,
 		SpeakerIndex:   ev.Speaker,
 		SpeakerAddress: ev.SpeakerAddress,
+		SpeakerName:    speaker.Name,
 		Data:           string(ev.Data),
 		Height:         uint64(height),
 	}
 	if err := c.db.Save(&discusstion).Error; err != nil {
 		c.logger.Error("save discusstion fail", "err", err)
 	}
-	err := ElizaCli.AddDiscussion(ctx, ev.Proposal, ev.SpeakerAddress, string(ev.Data))
+	err = ElizaCli.AddDiscussion(ctx, ev.Proposal, ev.SpeakerAddress, string(ev.Data))
 	if err != nil {
 		c.logger.Error("add discussion fail", "err", err)
 	}
