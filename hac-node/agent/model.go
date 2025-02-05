@@ -24,6 +24,8 @@ type Proposal struct {
 	NewHeight       uint64 `json:"new_height"`
 	SettleHeight    uint64 `json:"settle_height"`
 	Status          uint64 `json:"status"`
+	CreateTimestamp int64  `json:"create_timestamp"`
+	ExpireTimestamp int64 `json:"expire_timestamp"`
 }
 
 type Grant struct {

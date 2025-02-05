@@ -1,4 +1,5 @@
 //go:build !mock
+
 package main
 
 import (
@@ -90,7 +91,6 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("new eliza client err %s", err.Error())
 	}
-	
 
 	// new app
 	appConfig.App.Home = homeDir
@@ -132,7 +132,8 @@ func run(cmd *cobra.Command, args []string) {
 	}
 	rpcUrl.Scheme = "http"
 	dbPath := path.Join(appConfig.RootDir, "indexer.db")
-	indexer, err := agent.NewChainIndexer(logger, dbPath, rpcUrl.String())
+	node.BlockStore()
+	indexer, err := agent.NewChainIndexer(logger, dbPath, rpcUrl.String(), node.BlockStore())
 	if err != nil {
 		log.Fatalf("new chain indexer err %s", err.Error())
 	}

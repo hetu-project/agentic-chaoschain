@@ -3,6 +3,7 @@ package agent
 import (
 	"log"
 	"net/http"
+	"sort"
 
 	"github.com/calehh/hac-app/tx"
 	"github.com/gin-gonic/gin"
@@ -21,11 +22,15 @@ func NewService(ListenAddr string, indexer *ChainIndexer) *Service {
 		indexer:    indexer,
 		listenAddr: ListenAddr,
 	}
-	s.engine.POST("/getProposals", s.handleGetProposals)
-	s.engine.POST("/getDiscussions", s.handleGetDiscussions)
-	s.engine.POST("/getGrants", s.handleGetGrants)
-	s.engine.POST("/getAgents", s.handleGetAgents)
-	s.engine.POST("/getAgentDetail", s.handleGetAgentDetail)
+	s.engine.POST("/proposals", s.handleGetProposals)
+	s.engine.POST("/discussions", s.handleGetDiscussions)
+	s.engine.POST("/grants", s.handleGetGrants)
+	s.engine.POST("/agents", s.handleGetAgents)
+	s.engine.POST("/agent-detail", s.handleGetAgentDetail)
+	s.engine.GET("/manifesto", s.handleGetManifesto)
+	s.engine.GET("/network-status", s.handleGetNetworkStatus)
+	s.engine.GET("/latest-blocks", s.handleGetLatestBlocks)
+	s.engine.POST("/proposal-detail", s.handleGetProposalDetail)
 	return s
 }
 
@@ -44,10 +49,26 @@ type VoteInfo struct {
 	VoteCode     uint64 `json:"voteCode"`
 }
 type ProposalInfo struct {
-	Proposal      Proposal   `json:"proposal"`
-	DiscussoinCnt int        `json:"discussionCnt"`
-	DraftVotes    []VoteInfo `json:"draftVotes"`
-	DecisionVote  []VoteInfo `json:"decisionVotes"`
+	Proposal       Proposal   `json:"proposal"`
+	DiscussoinCnt  int        `json:"discussionCnt"`
+	DraftVotes     []VoteInfo `json:"draftVotes"`
+	DraftPass      uint64     `json:"draftPass"`
+	DraftReject    uint64     `json:"draftReject"`
+	DecisionVote   []VoteInfo `json:"decisionVotes"`
+	DecisionPass   uint64     `json:"decisionPass"`
+	DecisionReject uint64     `json:"decisionReject"`
+}
+
+type ProposalDetail struct {
+	Proposal      Proposal       `json:"proposal"`
+	DecisionSteps []DecisionStep `json:"decisionSteps"`
+}
+
+type DecisionStep struct {
+	Discussions    []Discussion `json:"discussions"`
+	DecisionVote   []VoteInfo   `json:"decisionVotes"`
+	DecisionPass   uint64       `json:"decisionPass"`
+	DecisionReject uint64       `json:"decisionReject"`
 }
 
 type GrantInfo struct {
@@ -111,6 +132,98 @@ func (s *Service) handleGetAgentDetail(c *gin.Context) {
 		}
 		response.AgentInfo.Proposals = append(response.AgentInfo.Proposals, proposalInfo)
 	}
+	c.JSON(http.StatusOK, response)
+}
+
+type GetManifestoResponse struct {
+	Manifesto string `json:"manifesto"`
+}
+
+func (s *Service) handleGetManifesto(c *gin.Context) {
+	c.JSON(http.StatusOK, GetManifestoResponse{Manifesto: MANIFESTO})
+}
+
+type GetNetworkStatusResponse struct {
+	BlockHeight         uint64 `json:"blockHeight"`
+	LastProposer        string `json:"lastProposer"`
+	ProposalsInProgress uint64 `json:"proposalsInProgress"`
+	ProposalsDecided    uint64 `json:"proposalsDecided"`
+}
+
+func (s *Service) handleGetNetworkStatus(c *gin.Context) {
+	var response GetNetworkStatusResponse
+	response.BlockHeight = uint64(s.indexer.Height)
+	block := s.indexer.BlockStore.LoadBlockMeta(s.indexer.Height)
+	if block != nil {
+		response.LastProposer = block.Header.ProposerAddress.String()
+	}
+	proposalsInProgress, err := s.indexer.getProposalsInProcess()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	proposalsDecided, err := s.indexer.getProposalsDecided()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	response.ProposalsInProgress = proposalsInProgress
+	response.ProposalsDecided = proposalsDecided
+	c.JSON(http.StatusOK, response)
+}
+
+type BlockInfo struct {
+	Height      uint64 `json:"height"`
+	Proposer    string `json:"proposer"`
+	ProposerId  uint64 `json:"proposerId"`
+	ProposalId  int64  `json:"proposalId"`
+	Discussions uint64 `json:"discussions"`
+}
+
+type GetLatestBlocksResponse struct {
+	Blocks []BlockInfo `json:"blocks"`
+}
+
+func (s *Service) handleGetLatestBlocks(c *gin.Context) {
+	response := GetLatestBlocksResponse{make([]BlockInfo, 0)}
+	info := BlockInfo{
+		Height:      uint64(s.indexer.Height),
+		Proposer:    "",
+		ProposerId:  0,
+		ProposalId:  0,
+		Discussions: 0,
+	}
+	block := s.indexer.BlockStore.LoadBlock(s.indexer.Height)
+	if block != nil {
+		c.JSON(http.StatusOK, response)
+		return
+	}
+	validator, err := s.indexer.getValidatorByAddress(block.Header.ProposerAddress.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	info.Proposer = validator.Name
+	info.ProposerId = validator.Id
+
+	proposal, err := s.indexer.getProposalByHeight(uint64(s.indexer.Height))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if proposal == nil || proposal.Id == 0 {
+		info.ProposalId = -1
+	} else {
+		info.ProposalId = int64(proposal.Id)
+	}
+
+	discussions, err := s.indexer.getDiscussionCntByHeight(uint64(s.indexer.Height))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	info.Discussions = discussions
+	response.Blocks = append(response.Blocks, info)
 	c.JSON(http.StatusOK, response)
 }
 
@@ -219,6 +332,96 @@ func (s *Service) handleGetDiscussions(c *gin.Context) {
 	return
 }
 
+type GetProposalDetailReq struct {
+	ProposalId uint64 `json:"proposalId"`
+}
+
+func (s *Service) handleGetProposalDetail(c *gin.Context) {
+	response := ProposalDetail{
+		Proposal:      Proposal{},
+		DecisionSteps: []DecisionStep{},
+	}
+	var requestData GetProposalDetailReq
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	proposalInfo, err := s.getProposalInfoById(requestData.ProposalId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if proposalInfo.Proposal.Id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "proposal not found"})
+		return
+	}
+	response.Proposal = proposalInfo.Proposal
+	discussions, _, err := s.indexer.getDiscussionByProposal(requestData.ProposalId, 0, proposalInfo.DiscussoinCnt+1)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	votes := proposalInfo.DecisionVote
+	if len(votes) == 0 {
+		response.DecisionSteps = append(response.DecisionSteps, DecisionStep{
+			Discussions:    discussions,
+			DecisionVote:   []VoteInfo{},
+			DecisionPass:   0,
+			DecisionReject: 0,
+		})
+		c.JSON(http.StatusOK, response)
+		return
+	}
+	// sort votes by height
+	sort.Slice(votes, func(i, j int) bool {
+		return votes[i].Height < votes[j].Height
+	})
+
+	// sort decisions by height
+	sort.Slice(discussions, func(i, j int) bool {
+		return discussions[i].Height < discussions[j].Height
+	})
+
+	stepVotes := make([]VoteInfo, 0)
+	stepDiscussions := make([]Discussion, 0)
+	stepHeigt := uint64(0)
+	lastStepHeigt := uint64(0)
+	for i, vote := range votes {
+		if vote.Height != stepHeigt || i == len(votes)-1 {
+			if len(stepVotes) > 0 {
+				pass := 0
+				reject := 0
+				for _, v := range stepVotes {
+					if v.Pass {
+						pass++
+					} else {
+						reject++
+					}
+				}
+				response.DecisionSteps = append(response.DecisionSteps, DecisionStep{
+					Discussions:    stepDiscussions,
+					DecisionVote:   stepVotes,
+					DecisionPass:   uint64(pass),
+					DecisionReject: uint64(reject),
+				})
+			}
+			stepVotes = []VoteInfo{vote}
+			stepDiscussions = make([]Discussion, 0)
+			lastStepHeigt = stepHeigt
+			stepHeigt = vote.Height
+			for _, discussion := range discussions {
+				if discussion.Height >= lastStepHeigt && discussion.Height < stepHeigt {
+					stepDiscussions = append(stepDiscussions, discussion)
+				}
+			}
+			continue
+		}
+		stepVotes = append(stepVotes, vote)
+	}
+	c.JSON(http.StatusOK, response)
+}
+
 type GetProposalsReq struct {
 	ProposalId      uint64 `json:"proposalId"`
 	ProposerAddress string `json:"proposer"`
@@ -293,10 +496,29 @@ func (s *Service) getProposalInfoById(proposalId uint64) (ProposalInfo, error) {
 	}
 	draftVotes, decisionVotes := ProposalVotesToVoteInfo(votes)
 	proposalInfo := ProposalInfo{
-		Proposal:      proposal,
-		DiscussoinCnt: int(total),
-		DraftVotes:    draftVotes,
-		DecisionVote:  decisionVotes,
+		Proposal:       proposal,
+		DiscussoinCnt:  int(total),
+		DraftVotes:     draftVotes,
+		DraftPass:      0,
+		DraftReject:    0,
+		DecisionVote:   decisionVotes,
+		DecisionPass:   0,
+		DecisionReject: 0,
+	}
+	for _, vote := range draftVotes {
+		if vote.Pass {
+			proposalInfo.DraftPass++
+		} else {
+			proposalInfo.DraftReject++
+		}
+	}
+
+	for _, vote := range decisionVotes {
+		if vote.Pass {
+			proposalInfo.DecisionPass++
+		} else {
+			proposalInfo.DecisionReject++
+		}
 	}
 	return proposalInfo, nil
 }

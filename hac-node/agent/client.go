@@ -18,6 +18,7 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtlog "github.com/cometbft/cometbft/libs/log"
 	comethttp "github.com/cometbft/cometbft/rpc/client/http"
+	"github.com/cometbft/cometbft/store"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
@@ -267,9 +268,10 @@ type ChainIndexer struct {
 	cli           *comethttp.HTTP
 	eventHandlers map[string]eventHandler
 	elizaClients  map[string]Client
+	BlockStore    *store.BlockStore
 }
 
-func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string) (*ChainIndexer, error) {
+func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *store.BlockStore) (*ChainIndexer, error) {
 	logger.Info("NewChainIndexer", "dbPath", dbPath, "url", chainUrl)
 	cli, err := comethttp.New(chainUrl, "/websocket")
 	if err != nil {
@@ -295,6 +297,7 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string) (*Cha
 		cli:           cli,
 		eventHandlers: map[string]eventHandler{},
 		elizaClients:  make(map[string]Client),
+		BlockStore:    bs,
 	}
 	c.eventHandlers = map[string]eventHandler{
 		hac_types.EventGrantType:          c.handleEventGrant,
@@ -390,6 +393,7 @@ func (c *ChainIndexer) handleEventProposal(ctx context.Context, event abci.Event
 		c.logger.Error("decode event fail", "event", event)
 		return
 	}
+	now := time.Now()
 	proposal := Proposal{
 		Id:              ev.ProposalIndex,
 		ProposerIndex:   ev.Proposer,
@@ -397,6 +401,8 @@ func (c *ChainIndexer) handleEventProposal(ctx context.Context, event abci.Event
 		Data:            string(ev.Data),
 		NewHeight:       uint64(height),
 		Status:          ev.Status,
+		CreateTimestamp: now.Unix(),
+		ExpireTimestamp: now.Add(time.Hour * 24 * 365).Unix(),
 	}
 	if err := c.db.Save(&proposal).Error; err != nil {
 		c.logger.Error("save proposal fail", "err", err)
@@ -703,6 +709,24 @@ func (c *ChainIndexer) queryAccount(ctx context.Context, index uint64, address s
 	return &act, err
 }
 
+func (c *ChainIndexer) getProposalsInProcess() (uint64, error) {
+	var total uint64
+	err := c.db.Model(&Proposal{}).Where("status = ?", hac_types.ProposalStatusProcessing).Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+func (c *ChainIndexer) getProposalsDecided() (uint64, error) {
+	var total uint64
+	err := c.db.Model(&Proposal{}).Where("status > ?", hac_types.ProposalStatusProcessing).Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
 func (c *ChainIndexer) getProposals(page int, pageSize int) ([]Proposal, uint64, error) {
 	var proposals []Proposal
 	err := c.db.Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&proposals).Error
@@ -755,6 +779,15 @@ func (c *ChainIndexer) getDiscussionByProposal(proposal uint64, page int, pageSi
 	return discussions, total, nil
 }
 
+func (c *ChainIndexer) getDiscussionCntByHeight(height uint64) (uint64, error) {
+	var total uint64
+	err := c.db.Model(&Discussion{}).Where("height = ?", height).Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
 func (c *ChainIndexer) getGrantById(grantId uint64) (Grant, error) {
 	var grant Grant
 	err := c.db.Where("id = ?", grantId).First(&grant).Error
@@ -794,6 +827,15 @@ func (c *ChainIndexer) getGrants(page int, pageSize int) ([]Grant, uint64, error
 		return nil, 0, err
 	}
 	return grants, total, nil
+}
+
+func (c *ChainIndexer) getProposalByHeight(height uint64) (*Proposal, error) {
+	var proposal Proposal
+	err := c.db.Where("new_height = ?", height).First(&proposal).Error
+	if err != nil {
+		return nil, err
+	}
+	return &proposal, nil
 }
 
 func (c *ChainIndexer) getProposalVotesByProposal(proposal uint64, page int, pageSize int) ([]ProposalVote, error) {
