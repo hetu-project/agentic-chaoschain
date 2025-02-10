@@ -13,13 +13,15 @@ import (
 )
 
 type newProposalArguments struct {
-	Url    string
-	Index  uint64
-	Nonce  uint64
-	Skey   string
-	Data   string
-	NoSend bool
-	Sig    string
+	Url      string
+	Index    uint64
+	Nonce    uint64
+	Skey     string
+	Data     string
+	NoSend   bool
+	Sig      string
+	Title    string
+	AgentUrl string
 }
 
 var newProposalArgs newProposalArguments
@@ -39,6 +41,8 @@ func init() {
 	newProposalCmd.Flags().StringVarP(&newProposalArgs.Data, "data", "d", "", "proposal data")
 	newProposalCmd.Flags().BoolVarP(&newProposalArgs.NoSend, "nosend", "", false, "not send transaction but print signature")
 	newProposalCmd.Flags().StringVarP(&newProposalArgs.Sig, "sig", "", "", "transaction signatures")
+	newProposalCmd.Flags().StringVarP(&newProposalArgs.Title, "title", "t", "New Proposal", "proposal title")
+	newProposalCmd.Flags().StringVarP(&newProposerArgs.AgentUrl, "agent", "a", "http://127.0.0.1/3000", "agent")
 }
 
 func newProposalRun(cmd *cobra.Command, args []string) {
@@ -67,9 +71,19 @@ func newProposalRun(cmd *cobra.Command, args []string) {
 		Nonce:     nonce,
 		Validator: newProposalArgs.Index,
 	}
+	if newProposalArgs.Title == "" {
+		newProposalArgs.Title, err = summarizePR(PR{Data: newProposalArgs.Data})
+		if err != nil {
+			fmt.Printf("summarize proposal err:%v\n", err)
+			return
+		}
+	}
 	stx := &tx.ProposalTx{
 		Proposer:  newProposalArgs.Index,
-		EndHeight: 0,
+		EndHeight: 1000000,
+		ImageUrl:  "",
+		Title:     newProposalArgs.Title,
+		Link:      "",
 		Data:      []byte(newProposalArgs.Data),
 	}
 	btx.Tx = stx

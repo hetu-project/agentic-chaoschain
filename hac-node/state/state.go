@@ -568,6 +568,10 @@ func (s *State) Proposal(tx *tx.ProposalTx, validator uint64, checkOnly bool, co
 		err = ErrTxMoreThanOneProposal
 		return
 	}
+	if tx.Title == "" {
+		err = errors.New("proposal title is empty")
+		return
+	}
 	if !checkOnly {
 		s.proposalMaxIndex += 1
 		proposal := hac_types.Proposal{
@@ -577,6 +581,9 @@ func (s *State) Proposal(tx *tx.ProposalTx, validator uint64, checkOnly bool, co
 			Data:            tx.Data,
 			Height:          s.header.Height,
 			EndHeight:       tx.EndHeight,
+			ImageUrl:        tx.ImageUrl,
+			Title:           tx.Title,
+			Link:            tx.Link,
 		}
 		if code == txtypes.VoteIgnoreProposal {
 			proposal.Status = hac_types.ProposalStatusIgnore

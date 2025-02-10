@@ -47,6 +47,9 @@ type EventProposal struct {
 	EndHeight       uint64 `json:"endHeight"`
 	Status          uint64 `json:"status"`
 	Data            []byte `json:"data"`
+	Title           string `json:"title"`
+	Link            string `json:"link"`
+	ImageUrl        string `json:"imageUrl"`
 }
 
 func EncodeEventProposal(event *EventProposal) abci.Event {
@@ -59,6 +62,9 @@ func EncodeEventProposal(event *EventProposal) abci.Event {
 			{Key: "status", Value: fmt.Sprintf("%v", event.Status), Index: false},
 			{Key: "data", Value: string(event.Data), Index: false},
 			{Key: "proposerAddress", Value: event.ProposerAddress, Index: false},
+			{Key: "title", Value: event.Title, Index: false},
+			{Key: "link", Value: event.Link, Index: false},
+			{Key: "imageUrl", Value: event.ImageUrl, Index: false},
 		},
 	}
 }
@@ -95,6 +101,12 @@ func DecodeEventProposal(originEvent abci.Event) *EventProposal {
 			event.Data = []byte(v.Value)
 		case "proposerAddress":
 			event.ProposerAddress = fmt.Sprintf("%v", v.Value)
+		case "title":
+			event.Title = v.Value
+		case "link":
+			event.Link = v.Value
+		case "imageUrl":
+			event.ImageUrl = v.Value
 		}
 	}
 	return event

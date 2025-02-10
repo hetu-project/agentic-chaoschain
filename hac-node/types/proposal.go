@@ -8,6 +8,9 @@ type Proposal struct {
 	Height          uint64         `json:"height"`
 	Status          ProposalStatus `json:"status"`
 	EndHeight       uint64         `json:"end_height"`
+	ImageUrl        string         `json:"image_url"`
+	Title           string         `json:"title"`
+	Link            string         `json:"link"`
 }
 
 type Discussion struct {

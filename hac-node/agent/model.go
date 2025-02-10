@@ -26,6 +26,9 @@ type Proposal struct {
 	NewHeight       uint64 `json:"new_height"`
 	SettleHeight    uint64 `json:"settle_height"`
 	Status          uint64 `json:"status"`
+	Title           string `json:"title"`
+	Link            string `json:"link"`
+	ImageUrl        string `json:"image_url"`
 	CreateTimestamp int64  `json:"create_timestamp"`
 	ExpireTimestamp int64  `json:"expire_timestamp"`
 }

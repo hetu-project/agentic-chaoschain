@@ -418,6 +418,9 @@ func (c *ChainIndexer) handleEventProposal(ctx context.Context, event abci.Event
 		Data:            string(ev.Data),
 		NewHeight:       uint64(height),
 		Status:          ev.Status,
+		Title:           ev.Title,
+		Link:            ev.Link,
+		ImageUrl:        ev.ImageUrl,
 		CreateTimestamp: now.Unix(),
 		ExpireTimestamp: now.Add(time.Hour * 24 * 365).Unix(),
 	}
