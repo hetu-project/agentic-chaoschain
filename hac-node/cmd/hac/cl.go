@@ -139,6 +139,9 @@ func run(cmd *cobra.Command, args []string) {
 	}
 	go indexer.Start(context.TODO())
 
+	service := agent.NewService(appConfig.App.ServiceAddress, indexer)
+	go service.Start()
+
 	defer func() {
 		log.Println("shut done...")
 		done := make(chan struct{})

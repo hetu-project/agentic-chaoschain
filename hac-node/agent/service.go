@@ -209,10 +209,6 @@ func (s *Service) handleGetLatestBlocks(c *gin.Context) {
 	info.ProposerAddress = validator.Address
 
 	proposal, err := s.indexer.getProposalByHeight(uint64(s.indexer.Height))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
 	if proposal == nil || proposal.Id == 0 {
 		info.ProposalId = -1
 	} else {
@@ -220,10 +216,6 @@ func (s *Service) handleGetLatestBlocks(c *gin.Context) {
 	}
 
 	discussions, err := s.indexer.getDiscussionCntByHeight(uint64(s.indexer.Height))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
 	info.Discussions = discussions
 	response.Blocks = append(response.Blocks, info)
 	c.JSON(http.StatusOK, response)
@@ -256,6 +248,7 @@ func (s *Service) handleGetGrants(c *gin.Context) {
 		return
 	}
 
+	requestData.Page -= 1
 	if requestData.GrantId != 0 {
 		grant, err := s.indexer.getGrantById(requestData.GrantId)
 		if err != nil {
@@ -319,6 +312,7 @@ func (s *Service) handleGetDiscussions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	requestData.Page -= 1
 	if requestData.ProposalId != 0 {
 		discussions, total, err := s.indexer.getDiscussionByProposal(requestData.ProposalId, requestData.Page, requestData.PageSize)
 		if err != nil {
@@ -444,6 +438,7 @@ func (s *Service) handleGetProposals(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	requestData.Page -= 1
 
 	if requestData.ProposalId != 0 {
 		proposalInfo, err := s.getProposalInfoById(requestData.ProposalId)

@@ -15,9 +15,10 @@ import (
 )
 
 type HACAppConfig struct {
-	Home          string `mapstructure:"-"`
-	TimeoutCommit uint64 `mapstructure:"-"`
-	AgentUrl      string `mapstructure:"agent_url"`
+	Home           string `mapstructure:"-"`
+	TimeoutCommit  uint64 `mapstructure:"-"`
+	AgentUrl       string `mapstructure:"agent_url"`
+	ServiceAddress string `mapstructure:"service_address"`
 }
 
 func DefaultHACAppConfig(home string) *HACAppConfig {
@@ -29,7 +30,7 @@ func DefaultHACAppConfig(home string) *HACAppConfig {
 }
 func NewHACAppConfig(home string) *HACAppConfig {
 	return &HACAppConfig{
-		Home: home,
+		Home:     home,
 		AgentUrl: "http://127.0.0.1:3000",
 	}
 }
