@@ -19,6 +19,7 @@ type HACAppConfig struct {
 	TimeoutCommit  uint64 `mapstructure:"-"`
 	AgentUrl       string `mapstructure:"agent_url"`
 	ServiceAddress string `mapstructure:"service_address"`
+	DiscussionRate int    `mapstructure:"discussion_rate"`
 }
 
 func DefaultHACAppConfig(home string) *HACAppConfig {

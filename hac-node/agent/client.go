@@ -26,7 +26,7 @@ import (
 
 var ElizaCli Client
 
-var DiscussionRate = 10
+var DiscussionRate = 0
 
 var DiscussionTrigger = 0
 
@@ -669,6 +669,9 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 }
 
 func (c *ChainIndexer) randomDiscuss() {
+	if DiscussionRate == 0 {
+		return
+	}
 	if (c.Height+int64(DiscussionTrigger))%int64(DiscussionRate) != 0 {
 		return
 	}

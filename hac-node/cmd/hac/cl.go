@@ -126,6 +126,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatal("comet node unable to run")
 	}
 	// start indexer
+	agent.DiscussionRate = appConfig.App.DiscussionRate
 	rpcUrl, err := url.Parse(appConfig.Config.RPC.ListenAddress)
 	if err != nil {
 		log.Fatalf("new parse url err %s", err.Error())
