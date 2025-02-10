@@ -1,0 +1,112 @@
+.progress-item-base {
+  margin-bottom: 4px;
+  span {
+    font-family: Inter;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 18.15px;
+    text-align: left;
+    text-underline-position: from-font;
+    text-decoration-skip-ink: none;
+  }
+}
+
+
+/* 进度条容器 */
+.progress-bar {
+  display: flex;
+  width: 100%;
+  height: 22px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px transparent;
+}
+
+/* 进度段 */
+.progress-segment {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+
+.progress-red {
+  background: linear-gradient(90deg, rgba(251, 123, 155, 0.64) 0%, #FF5780 100%);
+}
+
+.progress-yellow {
+  background: linear-gradient(90deg, rgba(253, 191, 7, 0.5) 0%, #FDBF07 100%);
+}
+
+.progress-gray {
+  background: #D9D9D9;
+
+}
+
+.progress-green-1 {
+  background: linear-gradient(90deg, rgba(132, 215, 167, 0.3) 0%, rgba(77, 202, 130, 0.64) 100%);
+}
+
+.progress-green-2 {
+  background: linear-gradient(90deg, rgba(132, 215, 167, 0.8) 0%, rgba(77, 202, 130, 0.8) 100%);
+}
+
+.progress-green-3 {
+  background: linear-gradient(90deg, rgba(77, 202, 130, 0.83) 0%, #4DCA82 100%);
+}
+
+.text-red {
+  color: #FF5780;
+}
+
+.text-yellow {
+  color: #FDBF07;
+}
+
+.text-gray {
+  color: #777575;
+
+}
+
+.text-green {
+  color: #4DCA82;
+}
+
+
+/* 凹陷圆形 */
+.progress-segment::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  background-color: #EFEFEF;
+
+
+  box-shadow: inset 0 0 5px transparent;
+}
+
+:where(.ant-card-body:hover) .progress-segment::before {
+  transition: background-color 0.3s, box-shadow 0.3s;
+  background-color: white;
+}
+
+/* 第一个进度段不显示左侧凹陷圆形 */
+.progress-segment:first-child::before {
+  display: none;
+}
+
+/* 给每个进度段右侧添加弧形效果 */
+.progress-segment:not(:last-child) {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
