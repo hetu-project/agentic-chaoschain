@@ -20,6 +20,8 @@ type Proposal struct {
 	Id              uint64 `gorm:"primaryKey" json:"id"`
 	ProposerIndex   uint64 `json:"proposer_index"`
 	ProposerAddress string `json:"proposer_address"`
+	ProposerName    string `json:"proposer_name"`
+	ProposerImage   string `json:"proposer_image"`
 	Data            string `json:"data"`
 	NewHeight       uint64 `json:"new_height"`
 	SettleHeight    uint64 `json:"settle_height"`

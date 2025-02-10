@@ -421,10 +421,19 @@ func (c *ChainIndexer) handleEventProposal(ctx context.Context, event abci.Event
 		CreateTimestamp: now.Unix(),
 		ExpireTimestamp: now.Add(time.Hour * 24 * 365).Unix(),
 	}
+	validator, err := c.getValidatorByAddress(ev.ProposerAddress)
+	if err != nil {
+		c.logger.Error("get validator fail", "err", err)
+	}
+	if validator.Name == "" {
+		validator.Name = "Enigma"
+	}
+	proposal.ProposerName = validator.Name
+
 	if err := c.db.Save(&proposal).Error; err != nil {
 		c.logger.Error("save proposal fail", "err", err)
 	}
-	err := ElizaCli.AddProposal(ctx, ev.ProposalIndex, ev.ProposerAddress, string(ev.Data))
+	err = ElizaCli.AddProposal(ctx, ev.ProposalIndex, ev.ProposerAddress, string(ev.Data))
 	if err != nil {
 		c.logger.Error("add proposal fail", "err", err)
 	}
