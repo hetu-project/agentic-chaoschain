@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"time"
@@ -24,6 +25,10 @@ import (
 )
 
 var ElizaCli Client
+
+var DiscussionRate = 10
+
+var DiscussionTrigger = 0
 
 type Client interface {
 	IfProcessProposal(ctx context.Context, proposer uint64, data []byte) (bool, error)
@@ -288,6 +293,8 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *s
 	if err = db.First(&h).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
+
+	DiscussionTrigger = rand.New(rand.NewSource(time.Now().UnixNano())).Intn(DiscussionRate)
 
 	c := ChainIndexer{
 		logger:        logger.With("module", "indexer"),
@@ -642,10 +649,35 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 					c.logger.Error("save height fail", "err", err)
 					continue
 				}
+				// random discuss if latest block height is current height + 1
+				if b.SyncInfo.LatestBlockHeight == c.Height+1 {
+					c.randomDiscuss()
+				}
 				c.Height++
 			}
 		}
 	}
+}
+
+func (c *ChainIndexer) randomDiscuss() {
+	if (c.Height+int64(DiscussionTrigger))%int64(DiscussionRate) != 0 {
+		return
+	}
+	proposals, err := c.getProposalsByStatus(uint64(hac_types.ProposalStatusProcessing), 0, 10)
+	if err != nil {
+		c.logger.Error("get proposals fail", "err", err)
+		return
+	}
+	if len(proposals) == 0 {
+		return
+	}
+	randProposal := proposals[rand.Intn(len(proposals))]
+	comment, err := ElizaCli.CommentPropoal(context.Background(), randProposal.Id, randProposal.ProposerAddress)
+	if err != nil {
+		c.logger.Error("comment proposal fail", "err", err)
+		return
+	}
+	c.logger.Info("comment proposal", "proposal", randProposal.Id, "comment", comment)
 }
 
 func (c *ChainIndexer) fillAgentSelfIntro() {
@@ -717,6 +749,15 @@ func (c *ChainIndexer) queryAccount(ctx context.Context, index uint64, address s
 		return nil, err
 	}
 	return &act, err
+}
+
+func (c *ChainIndexer) getProposalsByStatus(status uint64, page int, pageSize int) ([]Proposal, error) {
+	var proposals []Proposal
+	err := c.db.Where("status = ?", status).Order("id desc").Offset(page * pageSize).Limit(pageSize).Find(&proposals).Error
+	if err != nil {
+		return nil, err
+	}
+	return proposals, nil
 }
 
 func (c *ChainIndexer) getProposalsInProcess() (uint64, error) {
