@@ -44,7 +44,7 @@ func init() {
 	newProposerCmd.Flags().StringVarP(&newProposerArgs.Skey, "skeyPath", "s", "./config/priv_validator_key.json", "private key path")
 	newProposerCmd.Flags().BoolVarP(&newProposerArgs.NoSend, "nosend", "", false, "not send transaction but print signature")
 	newProposerCmd.Flags().StringVarP(&newProposerArgs.Sig, "sig", "", "", "transaction signatures")
-	newProposerCmd.Flags().StringVarP(&newProposerArgs.SourceUrl, "sourceUrl", "s", "", "source url")
+	newProposerCmd.Flags().StringVarP(&newProposerArgs.SourceUrl, "sourceUrl", "u", "", "source url")
 	newProposerCmd.Flags().Uint64VarP(&newProposerArgs.Duration, "duration", "t", 60, "duration")
 	newProposerCmd.Flags().StringVarP(&newProposerArgs.AgentUrl, "agent", "a", "http://127.0.0.1/3000", "agent")
 }
