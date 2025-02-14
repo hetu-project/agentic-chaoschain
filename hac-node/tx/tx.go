@@ -48,7 +48,8 @@ type ProposalTx struct {
 }
 
 type SettleProposalTx struct {
-	Proposal uint64 `json:"proposal"`
+	Proposal        uint64 `json:"proposal"`
+	ExpireTimestamp uint   `json:"expire_timestamp"`
 }
 
 type RetractTx struct {

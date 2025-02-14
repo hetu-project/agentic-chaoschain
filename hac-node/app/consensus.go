@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/calehh/hac-app/state"
 	"github.com/calehh/hac-app/tx"
@@ -332,6 +333,10 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 			voterAct, err := st.GetAccount(btx.Validator)
 			if voterAct == nil {
 				return 0, errors.New("voter not found")
+			}
+			if time.Now().Unix() > int64(stx.ExpireTimestamp) {
+				code = tx.VoteRejectProposal
+				continue
 			}
 			pass, err := app.agentCli.IfAcceptProposal(ctx, stx.Proposal, voterAct.Address())
 			if err != nil {

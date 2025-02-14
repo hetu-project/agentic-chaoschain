@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/calehh/hac-app/crypto"
 	"github.com/calehh/hac-app/tx"
@@ -68,7 +69,8 @@ func settleRun(cmd *cobra.Command, args []string) {
 		Validator: settleArgs.Index,
 	}
 	stx := &tx.SettleProposalTx{
-		Proposal: settleArgs.Proposal,
+		Proposal:        settleArgs.Proposal,
+		ExpireTimestamp: uint(time.Now().Unix() + 60*3),
 	}
 	btx.Tx = stx
 	btx.Type = tx.HACTxTypeSettleProposal
