@@ -380,6 +380,14 @@ func (s *Service) handleGetProposalDetail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	for i, _ := range discussions {
+		agent, err := s.indexer.getValidatorByAddress(discussions[i].SpeakerAddress)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		discussions[i].HeadPhoto = agent.HeadPhoto
+	}
 	votes := proposalInfo.DecisionVote
 	if len(votes) == 0 {
 		response.DecisionSteps = append(response.DecisionSteps, DecisionStep{

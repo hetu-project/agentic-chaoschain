@@ -661,6 +661,11 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 			log.Fatal("validator account not exist")
 		}
 
+		agent, err := c.getValidatorByAddress(acc.Address())
+		if err == nil && agent != nil && agent.Id != 0 {
+			continue
+		}
+
 		val := ValidatorAgent{
 			Id:       acc.Index,
 			Address:  acc.Address(),
