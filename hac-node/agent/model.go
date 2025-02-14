@@ -22,7 +22,7 @@ type Proposal struct {
 	ProposerIndex   uint64 `json:"proposer_index"`
 	ProposerAddress string `json:"proposer_address"`
 	ProposerName    string `json:"proposer_name"`
-	ProposerImage   string `json:"proposer_image"`
+	HeadPhoto       string `json:"head_photo"`
 	Data            string `json:"data"`
 	NewHeight       uint64 `json:"new_height"`
 	SettleHeight    uint64 `json:"settle_height"`
@@ -71,6 +71,7 @@ type Discussion struct {
 	SpeakerIndex    uint64 `json:"speaker_index"`
 	SpeakerAddress  string `json:"speaker_address"`
 	SpeakerName     string `json:"speaker_name"`
+	HeadPhoto       string `json:"head_photo"`
 	Data            string `json:"data"`
 	Height          uint64 `json:"height"`
 	CreateTimestamp int64  `json:"create_timestamp"`

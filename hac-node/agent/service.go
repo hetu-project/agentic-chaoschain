@@ -333,6 +333,14 @@ func (s *Service) handleGetDiscussions(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		for i, _ := range discussions {
+			agent, err := s.indexer.getValidatorByAddress(discussions[i].SpeakerAddress)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			discussions[i].HeadPhoto = agent.HeadPhoto
+		}
 		response.Discussions = discussions
 		response.Total = total
 		c.JSON(http.StatusOK, response)
@@ -497,6 +505,11 @@ func (s *Service) getProposalInfoById(proposalId uint64) (ProposalInfo, error) {
 	if err != nil {
 		return ProposalInfo{}, err
 	}
+	agent, err := s.indexer.getValidatorByAddress(proposal.ProposerAddress)
+	if err != nil {
+		return ProposalInfo{}, err
+	}
+	proposal.HeadPhoto = agent.HeadPhoto
 	_, total, err := s.indexer.getDiscussionByProposal(proposalId, 0, 1)
 	if err != nil {
 		return ProposalInfo{}, err
