@@ -786,6 +786,9 @@ func (c *ChainIndexer) randomDiscuss() {
 			suitePrs = append(suitePrs, p)
 		}
 	}
+	if len(suitePrs) == 0 {
+		return
+	}
 	randProposal := suitePrs[rand.Intn(len(suitePrs))]
 	comment, err := ElizaCli.CommentPropoal(context.Background(), randProposal.Id, randProposal.ProposerAddress)
 	if err != nil {
