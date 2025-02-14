@@ -84,15 +84,8 @@ func (app *HACApp) PrepareProposal(ctx context.Context, proposal *abcitypes.Requ
 			if proposerAct == true {
 				continue
 			}
-			proposeAcc, err := st.FindAccount(proposal.ProposerAddress)
-			if err != nil {
-				return nil, err
-			}
-			if proposeAcc.Index == btx.Validator {
-				proposerAct = true
-				app.logger.Info("proposer action", "type", btx.Type)
-				prepareTxs = append(prepareTxs, stx)
-			}
+			prepareTxs = append(prepareTxs, stx)
+			proposerAct = true
 		} else {
 			prepareTxs = append(prepareTxs, stx)
 		}
