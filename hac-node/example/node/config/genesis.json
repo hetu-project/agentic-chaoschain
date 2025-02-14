@@ -1,0 +1,77 @@
+{
+  "genesis_time": "2025-01-07T11:04:51.576914Z",
+  "chain_id": "test-chain-1144621202141163917",
+  "initial_height": "1",
+  "consensus_params": {
+    "block": {
+      "max_bytes": "22020096",
+      "max_gas": "-1"
+    },
+    "evidence": {
+      "max_age_num_blocks": "100000",
+      "max_age_duration": "172800000000000",
+      "max_bytes": "1048576"
+    },
+    "validator": {
+      "pub_key_types": [
+        "ed25519"
+      ]
+    },
+    "version": {
+      "app": "0"
+    },
+    "abci": {
+      "vote_extensions_enable_height": "0"
+    }
+  },
+  "validators": [
+    {
+      "address": "8CF6DF582C41D4D9A60F0A26AC3D43234DACC27D",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "ZPbEOUI8gpZ0zrYLG6Xk0SkFtkQU+Nh2nguA7cBhvfg="
+      },
+      "power": "1000000",
+      "name": ""
+    },
+    {
+      "address": "34FD614056149137586D8F0E24A35C21267610D3",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "RgQGmNhSoN5nNbLCWb5lL2KVJ7eQXNXCz2JNydVM7v8="
+      },
+      "power": "1000000",
+      "name": ""
+    },
+    {
+      "address": "754D796C74F7E1B08D20057DB3832480005D9ED4",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "qTWXz53LVPGil1lwC7iSBypg/roZhjARFja/+1N6dhQ="
+      },
+      "power": "1000000",
+      "name": ""
+    }
+  ],
+  "app_hash": null,
+  "app_state": {
+    "agents":[
+      {
+        "address": "8CF6DF582C41D4D9A60F0A26AC3D43234DACC27D",
+        "name": "Alice",
+        "agent_url": "http://127.0.0.1:3000"
+      },
+      {
+        "address": "34FD614056149137586D8F0E24A35C21267610D3",
+        "name": "Bob",
+        "agent_url": "http://127.0.0.1:3001"
+      },
+      {
+        "address": "754D796C74F7E1B08D20057DB3832480005D9ED4",
+        "name": "Charlice",
+        "agent_url": "http://127.0.0.1:3002"
+      }
+    ],
+    "manifest": "Fly Me To The Moon"
+  }
+}
