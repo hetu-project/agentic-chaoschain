@@ -779,7 +779,14 @@ func (c *ChainIndexer) randomDiscuss() {
 	if len(proposals) == 0 {
 		return
 	}
-	randProposal := proposals[rand.Intn(len(proposals))]
+	suitePrs := make([]Proposal, 0)
+	for _, p := range proposals {
+		_, cnt, err := c.getDiscussionByProposal(p.Id, 0, 1)
+		if err == nil && cnt < 15 {
+			suitePrs = append(suitePrs, p)
+		}
+	}
+	randProposal := suitePrs[rand.Intn(len(suitePrs))]
 	comment, err := ElizaCli.CommentPropoal(context.Background(), randProposal.Id, randProposal.ProposerAddress)
 	if err != nil {
 		c.logger.Error("comment proposal fail", "err", err)
