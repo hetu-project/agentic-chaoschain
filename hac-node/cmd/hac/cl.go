@@ -134,7 +134,7 @@ func run(cmd *cobra.Command, args []string) {
 	rpcUrl.Scheme = "http"
 	dbPath := path.Join(appConfig.RootDir, "indexer.db")
 	node.BlockStore()
-	indexer, err := agent.NewChainIndexer(logger, dbPath, rpcUrl.String(), node.BlockStore())
+	indexer, err := agent.NewChainIndexer(logger, dbPath, rpcUrl.String(), node.BlockStore(), appConfig)
 	if err != nil {
 		log.Fatalf("new chain indexer err %s", err.Error())
 	}

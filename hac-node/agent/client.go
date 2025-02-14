@@ -14,7 +14,10 @@ import (
 	"net/url"
 	"time"
 
+	app_config "github.com/calehh/hac-app/config"
+	"github.com/calehh/hac-app/crypto"
 	"github.com/calehh/hac-app/state"
+	"github.com/calehh/hac-app/tx"
 	hac_types "github.com/calehh/hac-app/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtlog "github.com/cometbft/cometbft/libs/log"
@@ -330,9 +333,12 @@ type ChainIndexer struct {
 	eventHandlers map[string]eventHandler
 	elizaClients  map[string]Client
 	BlockStore    *store.BlockStore
+	appConfig     *app_config.Config
+	pv            *crypto.PV
+	localAddress  string
 }
 
-func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *store.BlockStore) (*ChainIndexer, error) {
+func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *store.BlockStore, appConfig *app_config.Config) (*ChainIndexer, error) {
 	logger.Info("NewChainIndexer", "dbPath", dbPath, "url", chainUrl)
 	cli, err := comethttp.New(chainUrl, "/websocket")
 	if err != nil {
@@ -356,6 +362,9 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *s
 		DiscussionTrigger = 0
 	}
 
+	pv := crypto.LoadFilePV(appConfig.PrivValidatorKey)
+	localAddress := pv.Address()
+
 	c := ChainIndexer{
 		logger:        logger.With("module", "indexer"),
 		Url:           chainUrl,
@@ -365,6 +374,9 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *s
 		eventHandlers: map[string]eventHandler{},
 		elizaClients:  make(map[string]Client),
 		BlockStore:    bs,
+		appConfig:     appConfig,
+		pv:            pv,
+		localAddress:  localAddress,
 	}
 	c.eventHandlers = map[string]eventHandler{
 		hac_types.EventGrantType:          c.handleEventGrant,
@@ -758,7 +770,72 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 				if b.SyncInfo.LatestBlockHeight == c.Height+1 {
 					c.randomDiscuss()
 				}
+				if c.Height%5 == 0 {
+					c.settlePR()
+				}
 				c.Height++
+			}
+		}
+	}
+}
+
+func (c *ChainIndexer) settlePR() {
+	cli, err := comethttp.New(c.appConfig.RPC.ListenAddress, "/websocket")
+	if err != nil {
+		c.logger.Error("connect fail", "err", err)
+		return
+	}
+	ctx := context.Background()
+	gres, err := cli.Genesis(ctx)
+	if err != nil {
+		c.logger.Error("get genesis fail", "err", err)
+		return
+	}
+	chainId := gres.Genesis.ChainID
+	act, err := queryAccount(c.appConfig.RPC.ListenAddress, 0, c.localAddress)
+	if err != nil {
+		return
+	}
+
+	proposals, err := c.getProposalsByStatus(uint64(hac_types.ProposalStatusProcessing), 0, 100)
+	if err != nil {
+		c.logger.Error("get proposals fail", "err", err)
+	}
+	for _, p := range proposals {
+		if p.ProposerAddress == c.localAddress {
+			_, cnt, err := c.getDiscussionByProposal(p.Id, 0, 1)
+			if cnt < 15 {
+				continue
+			}
+			btx := tx.HACTx{
+				Version:   tx.HACTxVersion1,
+				Nonce:     act.Nonce,
+				Validator: act.Index,
+			}
+			stx := &tx.SettleProposalTx{
+				Proposal:        p.Id,
+				ExpireTimestamp: uint(time.Now().Unix() + 60*3),
+			}
+			btx.Tx = stx
+			btx.Type = tx.HACTxTypeSettleProposal
+			dat, err := btx.SigData([]byte(chainId))
+			if err != nil {
+				c.logger.Error("sign tx fail", "err", err)
+				return
+			}
+			sigs := [][]byte{}
+			sig, err := c.pv.Sign(dat)
+			if err != nil {
+				c.logger.Error("sign tx fail", "err", err)
+				return
+			}
+			sigs = append(sigs, sig)
+			btx.Sig = sigs
+			dat, _ = json.Marshal(btx)
+			_, err = cli.BroadcastTxSync(ctx, dat)
+			if err != nil {
+				c.logger.Error("broadcast tx fail", "err", err)
+				return
 			}
 		}
 	}
@@ -1041,4 +1118,42 @@ func (c *ChainIndexer) getGrantVotesByVoter(voter string, page int, pageSize int
 		return nil, err
 	}
 	return votes, nil
+}
+
+func queryAccount(url string, index uint64, address string) (*state.Account, error) {
+	cli, err := comethttp.New(url, "/websocket")
+	if err != nil {
+		fmt.Printf("new client err:%v\n", err)
+		return nil, err
+	}
+	ctx := context.Background()
+	var dat []byte
+	if len(address) > 0 {
+		dat, err = hex.DecodeString(address)
+		if err != nil {
+			fmt.Printf("invalid address:%v\n", address)
+			return nil, err
+		}
+	} else {
+		s := fmt.Sprintf("0%x", index)
+		if len(s)&1 == 1 {
+			s = s[1:]
+		}
+		dat, _ = hex.DecodeString(s)
+	}
+	res, err := cli.ABCIQuery(ctx, "/accounts/", dat)
+	if err != nil {
+		fmt.Printf("request err:%v\n", err)
+		return nil, err
+	}
+	if res.Response.Code != 0 {
+		fmt.Printf("%#v\n", res)
+		return nil, errors.New("response code 0")
+	}
+	var act state.Account
+	err = act.UnmarshalJSON(res.Response.Value)
+	if err != nil {
+		return nil, err
+	}
+	return &act, err
 }
