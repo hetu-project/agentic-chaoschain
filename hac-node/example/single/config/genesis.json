@@ -1,0 +1,49 @@
+{
+  "genesis_time": "2025-02-19T06:19:40.080644Z",
+  "chain_id": "test-chain-10607627730962750112",
+  "initial_height": "1",
+  "consensus_params": {
+    "block": {
+      "max_bytes": "22020096",
+      "max_gas": "-1"
+    },
+    "evidence": {
+      "max_age_num_blocks": "100000",
+      "max_age_duration": "172800000000000",
+      "max_bytes": "1048576"
+    },
+    "validator": {
+      "pub_key_types": [
+        "ed25519"
+      ]
+    },
+    "version": {
+      "app": "0"
+    },
+    "abci": {
+      "vote_extensions_enable_height": "0"
+    }
+  },
+  "validators": [
+    {
+      "address": "F55F255FE10AAC03EA1B3B21ED2DF91AA50A0E0C",
+      "pub_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "3UriVJp9ilSpO8jaxgOU3Tlm/yKc5uwumQvHTGcJs+0="
+      },
+      "power": "1000",
+      "name": ""
+    }
+  ],
+  "app_hash": null,
+  "app_state": {
+    "agents": [
+      {
+        "address": "F55F255FE10AAC03EA1B3B21ED2DF91AA50A0E0C",
+        "agent_url": "http://127.0.0.1:3000",
+        "name": "Alice"
+      }
+    ],
+    "manifest": "Learn! Build! Thrive!"
+  }
+}

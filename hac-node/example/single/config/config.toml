@@ -16,10 +16,10 @@ version = "0.38.15"
 
 # TCP or UNIX socket address of the ABCI application,
 # or the name of an ABCI application compiled in with the CometBFT binary
-proxy_app = "tcp://127.0.0.1:26618"
+proxy_app = "tcp://127.0.0.1:26658"
 
 # A custom human readable name for this node
-moniker = "me.local"
+moniker = "bogon"
 
 # Database backend: goleveldb | cleveldb | boltdb | rocksdb | badgerdb
 # * goleveldb (github.com/syndtr/goleveldb - most popular implementation)
@@ -87,7 +87,7 @@ filter_peers = false
 [rpc]
 
 # TCP or UNIX socket address for the RPC server to listen on
-laddr = "tcp://127.0.0.1:26617"
+laddr = "tcp://127.0.0.1:26657"
 
 # A list of origins a cross-domain request can be executed from
 # Default value '[]' disables cors support
@@ -198,7 +198,7 @@ pprof_laddr = ""
 [p2p]
 
 # Address to listen for incoming connections
-laddr = "tcp://0.0.0.0:26616"
+laddr = "tcp://0.0.0.0:26656"
 
 # Address to advertise to peers for them to dial. If empty, will use the same
 # port as the laddr, and will introspect on the listener to figure out the
@@ -209,14 +209,14 @@ external_address = ""
 seeds = ""
 
 # Comma separated list of nodes to keep persistent connections to
-persistent_peers = "aebf71c1103fe7fcb2bf446cf83449f9d7c635ed@127.0.0.1:26616,7e4692440e9ea52f0a40695035a4c905ed1880ae@127.0.0.1:26626,5b09770881dc3cb156384db580e88f8e6a970ffd@127.0.0.1:26636"
+persistent_peers = ""
 
 # Path to address book
 addr_book_file = "config/addrbook.json"
 
 # Set true for strict address routability rules
 # Set false for private or local networks
-addr_book_strict = false
+addr_book_strict = true
 
 # Maximum number of inbound peers
 max_num_inbound_peers = 40
@@ -255,7 +255,7 @@ seed_mode = false
 private_peer_ids = ""
 
 # Toggle to disable guard against peers connecting from the same ip.
-allow_duplicate_ip = true
+allow_duplicate_ip = false
 
 # Peer connection configuration.
 handshake_timeout = "20s"
@@ -407,7 +407,7 @@ timeout_precommit_delta = "500ms"
 # How long we wait after committing a block, before starting on the new
 # height (this gives us a chance to receive some more precommits, even
 # though we already have +2/3).
-timeout_commit = "30s"
+timeout_commit = "20s"
 
 # How many blocks to look back to check existence of the node's consensus votes before joining consensus
 # When non-zero, the node will panic upon restart
@@ -470,7 +470,7 @@ psql-conn = ""
 prometheus = false
 
 # Address to listen for Prometheus collector(s) connections
-prometheus_listen_addr = ":26610"
+prometheus_listen_addr = ":26660"
 
 # Maximum number of simultaneous connections.
 # If you want to accept a larger number than the default, make sure
@@ -489,3 +489,4 @@ namespace = "cometbft"
 agent_url = "http://127.0.0.1:3000" # eliza agent service address
 service_address = "0.0.0.0:8631" # api server listen address
 discussion_rate = 2 # controls the rate of discussion
+
