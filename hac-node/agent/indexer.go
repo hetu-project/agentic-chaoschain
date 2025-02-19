@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"path"
 	"time"
 
 	app_config "github.com/calehh/hac-app/config"
@@ -62,8 +63,9 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *s
 	} else {
 		DiscussionTrigger = 0
 	}
-
-	pv := crypto.LoadFilePV(appConfig.PrivValidatorKey)
+	privKeyPath := path.Join(appConfig.RootDir, appConfig.PrivValidatorKey)
+	println("privkeyPath:", privKeyPath)
+	pv := crypto.LoadFilePV(privKeyPath)
 	localAddress := pv.Address()
 
 	ctx := context.Background()

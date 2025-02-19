@@ -89,8 +89,10 @@ func run(cmd *cobra.Command, args []string) {
 	logger.Info("agent url: %s", agentUrl)
 	agent.ElizaCli, err = agent.NewElizaClient(agentUrl, logger)
 	if err != nil {
-		log.Fatalf("new eliza client err %s", err.Error())
+		fmt.Printf("ERROR:new eliza client err %s\n", err.Error())
 	}
+	fmt.Println("Using mock eliza client!")
+	agent.ElizaCli = &agent.MockClient{}
 
 	// new app
 	appConfig.App.Home = homeDir
