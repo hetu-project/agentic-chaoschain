@@ -316,6 +316,9 @@ func (voteSet *VoteSet) addVerifiedVote(
 	if quorum <= votesByBlock.sum {
 		voteCodePower := make(map[int64]int64, 0)
 		for _, vote := range votesByBlock.votes {
+			if vote == nil {
+				continue
+			}
 			if _, ok = voteCodePower[vote.VoteCode]; !ok {
 				voteCodePower[vote.VoteCode] = vote.Power
 			} else {
