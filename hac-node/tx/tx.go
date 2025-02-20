@@ -39,7 +39,6 @@ type DiscussionTx struct {
 }
 
 type ProposalTx struct {
-	Proposer  uint64 `json:"proposer"`
 	EndHeight uint64 `json:"endHeight"`
 	ImageUrl  string `json:"imageUrl"`
 	Title     string `json:"title"`

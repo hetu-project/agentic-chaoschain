@@ -314,7 +314,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 			}
 			proposerAct = true
 			stx := btx.Tx.(*tx.ProposalTx)
-			pass, err := app.agentCli.IfProcessProposal(ctx, stx.Proposer, stx.Data)
+			pass, err := app.agentCli.IfProcessProposal(ctx, stx.Data)
 			if err != nil {
 				return 0, err
 			}

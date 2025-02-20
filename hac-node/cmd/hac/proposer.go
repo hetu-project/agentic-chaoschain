@@ -123,7 +123,6 @@ func newProposerRun(cmd *cobra.Command, args []string) {
 			continue
 		}
 		stx := &tx.ProposalTx{
-			Proposer:  newProposerArgs.Index,
 			EndHeight: 0,
 			ImageUrl:  pr.ImageUrl,
 			Title:     title,

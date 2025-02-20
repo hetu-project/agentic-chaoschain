@@ -79,7 +79,6 @@ func newProposalRun(cmd *cobra.Command, args []string) {
 		}
 	}
 	stx := &tx.ProposalTx{
-		Proposer:  newProposalArgs.Index,
 		EndHeight: 1000000,
 		ImageUrl:  "",
 		Title:     newProposalArgs.Title,
