@@ -37,7 +37,6 @@ type HACApp struct {
 	lastBlk  finalizeBlock
 	txHdlrs  map[tx.HACTxType]handler.TxHandler
 	queriers map[string]Querier
-	agentCli agent.Client
 
 	st *state.State
 }
@@ -57,7 +56,6 @@ func NewHACApp(cfg *config.HACAppConfig, agentClient agent.Client, logger cmtlog
 		db:       db,
 		txHdlrs:  make(map[tx.HACTxType]handler.TxHandler),
 		queriers: make(map[string]Querier),
-		agentCli: agentClient,
 	}
 	app.registerTxHandler()
 	app.registerQuerier()

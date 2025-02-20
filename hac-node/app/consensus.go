@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/calehh/hac-app/agent"
 	"github.com/calehh/hac-app/state"
 	"github.com/calehh/hac-app/tx"
 	hac_types "github.com/calehh/hac-app/types"
@@ -207,9 +208,10 @@ func (app *HACApp) process(ctx context.Context, st *state.State, txs [][]byte, p
 }
 
 func (app *HACApp) ProcessProposal(ctx context.Context, proposal *abcitypes.RequestProcessProposal) (res *abcitypes.ResponseProcessProposal, err error) {
-	app.logger.Info("ProcessProposal")
-	res = &abcitypes.ResponseProcessProposal{Status: abcitypes.ResponseProcessProposal_REJECT}
+	app.logger.Info("ProcessProposal AAA")
+	res = &abcitypes.ResponseProcessProposal{Status: abcitypes.ResponseProcessProposal_REJECT, VoteCode: 0}
 	if len(proposal.Txs) == 0 {
+		app.logger.Info("ProcessProposal", "height", proposal.Height, "no txs")
 		res.Status = abcitypes.ResponseProcessProposal_ACCEPT
 		return res, nil
 	}
@@ -220,6 +222,7 @@ func (app *HACApp) ProcessProposal(ctx context.Context, proposal *abcitypes.Requ
 		app.logger.Error("ProcessProposal getCode failed", "height", uint64(proposal.Height), "err", err)
 		return res, nil
 	}
+	app.logger.Info("ProcessProposal", "code", code)
 	res.VoteCode = int64(code)
 
 	_, _, err = app.process(ctx, st, proposal.Txs, proposal.ProposerAddress, uint64(proposal.Height), code)
@@ -298,7 +301,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 			if proposerAct == nil {
 				return 0, errors.New("proposer not found")
 			}
-			pass, err := app.agentCli.IfGrantNewMember(ctx, st.Header().AccountIdx, proposerAct.Address(), stx.Grants[0].Amount, stx.Grants[0].Statement)
+			pass, err := agent.ElizaCli.IfGrantNewMember(ctx, st.Header().AccountIdx, proposerAct.Address(), stx.Grants[0].Amount, stx.Grants[0].Statement)
 			if err != nil {
 				return 0, err
 			}
@@ -314,7 +317,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 			}
 			proposerAct = true
 			stx := btx.Tx.(*tx.ProposalTx)
-			pass, err := app.agentCli.IfProcessProposal(ctx, stx.Data)
+			pass, err := agent.ElizaCli.IfProcessProposal(ctx, stx.Data)
 			if err != nil {
 				return 0, err
 			}
@@ -338,7 +341,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 				code = tx.VoteRejectProposal
 				continue
 			}
-			pass, err := app.agentCli.IfAcceptProposal(ctx, stx.Proposal, voterAct.Address())
+			pass, err := agent.ElizaCli.IfAcceptProposal(ctx, stx.Proposal, voterAct.Address())
 			if err != nil {
 				return 0, err
 			}
