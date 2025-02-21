@@ -87,11 +87,7 @@ func run(cmd *cobra.Command, args []string) {
 	//new agent client
 	agentUrl := strings.TrimRight(appConfig.App.AgentUrl, "/")
 	logger.Info("agent url: %s", agentUrl)
-	// agent.ElizaCli, err = agent.NewElizaClient(agentUrl, logger)
-	// if err != nil {
-	// 	fmt.Printf("ERROR:new eliza client err %s\n", err.Error())
-	// }
-	fmt.Println("Using mock eliza client!")
+	fmt.Println("Using mock client!")
 	agent.ClientInstance = &agent.MockClient{}
 
 	// new app
