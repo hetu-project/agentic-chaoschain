@@ -59,7 +59,6 @@ for i in $(seq 1 $((NUM_NODES))); do
     RPC_PORT=$((BASE_RPC_PORT + (i-1)*PORT_INTERVAL))
     APP_PORT=$((BASE_APP_PORT + (i-1)*PORT_INTERVAL))
     
-    # 修改config.toml
     #sed -i "s/^proxy_app = \"tcp:\/\/127.0.0.1:26658\"/proxy_app = \"tcp:\/\/127.0.0.1:$APP_PORT\"/" data$i/config/config.toml
     sed -i "s/^laddr = \"tcp:\/\/0.0.0.0:26656\"/laddr = \"tcp:\/\/0.0.0.0:$P2P_PORT\"/" data$i/config/config.toml
     sed -i "s/^laddr = \"tcp:\/\/127.0.0.1:26657\"/laddr = \"tcp:\/\/127.0.0.1:$RPC_PORT\"/" data$i/config/config.toml
@@ -67,7 +66,6 @@ for i in $(seq 1 $((NUM_NODES))); do
     sed -i "s/pex = true/pex = false/" data$i/config/config.toml
 
 
-    # 构建persistent_peers字符串
     PEERS=""
     for j in $(seq 1 $((NUM_NODES))); do
         PEER_PORT=$((BASE_P2P_PORT + (j-1)*PORT_INTERVAL))
@@ -78,7 +76,7 @@ for i in $(seq 1 $((NUM_NODES))); do
         fi
     done
     
-    # 更新persistent_peers并确保其他P2P相关配置正确
+
     sed -i "s/^persistent_peers = \"\"/persistent_peers = \"$PEERS\"/" data$i/config/config.toml
     sed -i "s/^allow_duplicate_ip = false/allow_duplicate_ip = true/" data$i/config/config.toml
 
