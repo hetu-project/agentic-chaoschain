@@ -301,7 +301,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 			if proposerAct == nil {
 				return 0, errors.New("proposer not found")
 			}
-			pass, err := agent.ElizaCli.IfGrantNewMember(ctx, st.Header().AccountIdx, proposerAct.Address(), stx.Grants[0].Amount, stx.Grants[0].Statement)
+			pass, err := agent.ClientInstance.IfGrantNewMember(ctx, st.Header().AccountIdx, proposerAct.Address(), stx.Grants[0].Amount, stx.Grants[0].Statement)
 			if err != nil {
 				return 0, err
 			}
@@ -317,7 +317,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 			}
 			proposerAct = true
 			stx := btx.Tx.(*tx.ProposalTx)
-			pass, err := agent.ElizaCli.IfProcessProposal(ctx, stx.Data)
+			pass, err := agent.ClientInstance.IfProcessProposal(ctx, stx.Data)
 			if err != nil {
 				return 0, err
 			}
@@ -341,7 +341,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 				code = tx.VoteRejectProposal
 				continue
 			}
-			pass, err := agent.ElizaCli.IfAcceptProposal(ctx, stx.Proposal, voterAct.Address())
+			pass, err := agent.ClientInstance.IfAcceptProposal(ctx, stx.Proposal, voterAct.Address())
 			if err != nil {
 				return 0, err
 			}

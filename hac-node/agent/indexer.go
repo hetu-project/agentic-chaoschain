@@ -31,7 +31,7 @@ type ChainIndexer struct {
 	db            *gorm.DB
 	cli           *comethttp.HTTP
 	eventHandlers map[string]eventHandler
-	elizaClients  map[string]Client
+	Clients  map[string]Client
 	BlockStore    *store.BlockStore
 	appConfig     *app_config.Config
 	pv            *crypto.PV
@@ -83,7 +83,7 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *s
 		db:            db,
 		cli:           cli,
 		eventHandlers: map[string]eventHandler{},
-		elizaClients:  make(map[string]Client),
+		Clients:  make(map[string]Client),
 		BlockStore:    bs,
 		appConfig:     appConfig,
 		pv:            pv,
@@ -136,9 +136,9 @@ func (c *ChainIndexer) handleEventGrant(ctx context.Context, event abci.Event, h
 		Name:     ev.Name,
 	}
 
-	cli, err := NewElizaClient(ev.AgentUrl, c.logger)
+	cli, err := NewMockClient(ev.AgentUrl, c.logger)
 	if err != nil {
-		c.logger.Error("new eliza client fail", "err", err)
+		c.logger.Error("new mock client fail", "err", err)
 	} else {
 		hp, err := cli.GetHeadPhoto(ctx)
 		if err != nil {
@@ -180,7 +180,7 @@ func (c *ChainIndexer) handleEventDiscussion(ctx context.Context, event abci.Eve
 	if err := c.db.Save(&discusstion).Error; err != nil {
 		c.logger.Error("save discusstion fail", "err", err)
 	}
-	err = ElizaCli.AddDiscussion(ctx, ev.Proposal, ev.SpeakerAddress, string(ev.Data))
+	err = ClientInstance.AddDiscussion(ctx, ev.Proposal, ev.SpeakerAddress, string(ev.Data))
 	if err != nil {
 		c.logger.Error("add discussion fail", "err", err)
 	}
@@ -236,11 +236,11 @@ func (c *ChainIndexer) handleEventProposal(ctx context.Context, event abci.Event
 	if err := c.db.Save(&proposal).Error; err != nil {
 		c.logger.Error("save proposal fail", "err", err)
 	}
-	err = ElizaCli.AddProposal(ctx, ev.ProposalIndex, ev.ProposerAddress, string(ev.Data))
+	err = ClientInstance.AddProposal(ctx, ev.ProposalIndex, ev.ProposerAddress, string(ev.Data))
 	if err != nil {
 		c.logger.Error("add proposal fail", "err", err)
 	}
-	comment, err := ElizaCli.CommentPropoal(ctx, ev.ProposalIndex, ev.ProposerAddress)
+	comment, err := ClientInstance.CommentPropoal(ctx, ev.ProposalIndex, ev.ProposerAddress)
 	if err != nil {
 		c.logger.Error("comment proposal fail", "err", err)
 	} else {
@@ -400,9 +400,9 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 			Name:     acc.Name,
 		}
 
-		cli, err := NewElizaClient(val.AgentUrl, c.logger)
+		cli, err := NewMockClient(val.AgentUrl, c.logger)
 		if err != nil {
-			c.logger.Error("new eliza client fail", "err", err)
+			c.logger.Error("new mock client fail", "err", err)
 		} else {
 			hp, err := cli.GetHeadPhoto(ctx)
 			if err != nil {
@@ -575,7 +575,7 @@ func (c *ChainIndexer) randomDiscuss() {
 		return
 	}
 	randProposal := suitePrs[rand.Intn(len(suitePrs))]
-	comment, err := ElizaCli.CommentPropoal(context.Background(), randProposal.Id, randProposal.ProposerAddress)
+	comment, err := ClientInstance.CommentPropoal(context.Background(), randProposal.Id, randProposal.ProposerAddress)
 	if err != nil {
 		c.logger.Error("comment proposal fail", "err", err)
 		return
@@ -593,15 +593,15 @@ func (c *ChainIndexer) fillAgentSelfIntro() {
 	}
 	for _, a := range agents {
 		if a.AgentUrl != "" {
-			if _, ok := c.elizaClients[a.Address]; !ok {
-				client, err := NewElizaClient(a.AgentUrl, c.logger)
+			if _, ok := c.Clients[a.Address]; !ok {
+				client, err := NewMockClient(a.AgentUrl, c.logger)
 				if err != nil {
-					c.logger.Error("new eliza client fail", "err", err)
+					c.logger.Error("new mock client fail", "err", err)
 					continue
 				}
-				c.elizaClients[a.Address] = client
+				c.Clients[a.Address] = client
 			}
-			selfIntro, err := c.elizaClients[a.Address].GetSelfIntro(context.Background())
+			selfIntro, err := c.Clients[a.Address].GetSelfIntro(context.Background())
 			if err != nil {
 				c.logger.Error("get self intro fail", "err", err)
 				continue

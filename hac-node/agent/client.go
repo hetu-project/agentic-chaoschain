@@ -13,7 +13,7 @@ import (
 	"net/url"
 )
 
-var ElizaCli Client
+var ClientInstance Client
 
 var DiscussionRate = 0
 
@@ -272,7 +272,43 @@ func (e *ElizaClient) IfProcessProposal(ctx context.Context, data []byte) (bool,
 }
 
 type MockClient struct {
+	Url     string
+	logger  cmtlog.Logger
+	AgentId string
 }
+
+func (m *MockClient) GetAgentIds(ctx context.Context) ([]string, error) {
+	mockResponse := `{
+		"agents": [
+			{
+				"id": "mock-agent-1",
+				"name": "Agent One"
+			},
+			{
+				"id": "mock-agent-2",
+				"name": "Agent Two"
+			}
+		]
+	}`
+	var agents struct {
+		Agents []struct {
+			Id   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"agents"`
+	}
+
+	err := json.Unmarshal([]byte(mockResponse), &agents)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(agents.Agents))
+	for _, ag := range agents.Agents {
+		ids = append(ids, ag.Id)
+	}
+	return ids, nil
+}
+
 
 func (m *MockClient) GetHeadPhoto(ctx context.Context) (string, error) {
 	return "", nil
@@ -294,8 +330,22 @@ func (m *MockClient) CommentPropoal(ctx context.Context, proposal uint64, speake
 	return "", nil
 }
 
-func NewMockClient() *MockClient {
-	return &MockClient{}
+func NewMockClient(url string, logger cmtlog.Logger) (*MockClient, error) {
+
+	l := logger.With("module", "eliza")
+	client := &MockClient{
+		Url:    url,
+		logger: l,
+	}
+	ids, err := client.GetAgentIds(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, errors.New("no agent id")
+	}
+	client.AgentId = ids[0]
+	return client, nil
 }
 
 func (m *MockClient) IfAcceptProposal(ctx context.Context, proposal uint64, voter string) (bool, error) {
