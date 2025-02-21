@@ -94,6 +94,43 @@ func (m *MockClient) GetAgentIds(ctx context.Context) ([]string, error) {
 	return ids, nil
 }
 
+type MockClient struct {
+	Url     string
+	logger  cmtlog.Logger
+	AgentId string
+}
+
+func (m *MockClient) GetAgentIds(ctx context.Context) ([]string, error) {
+	mockResponse := `{
+		"agents": [
+			{
+				"id": "mock-agent-1",
+				"name": "Agent One"
+			},
+			{
+				"id": "mock-agent-2",
+				"name": "Agent Two"
+			}
+		]
+	}`
+	var agents struct {
+		Agents []struct {
+			Id   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"agents"`
+	}
+
+	err := json.Unmarshal([]byte(mockResponse), &agents)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(agents.Agents))
+	for _, ag := range agents.Agents {
+		ids = append(ids, ag.Id)
+	}
+	return ids, nil
+}
 
 func (m *MockClient) GetHeadPhoto(ctx context.Context) (string, error) {
 	return "", nil
@@ -116,7 +153,6 @@ func (m *MockClient) CommentPropoal(ctx context.Context, proposal uint64, speake
 }
 
 func NewMockClient(url string, logger cmtlog.Logger) (*MockClient, error) {
-
 	l := logger.With("module", "mock")
 	client := &MockClient{
 		Url:    url,
