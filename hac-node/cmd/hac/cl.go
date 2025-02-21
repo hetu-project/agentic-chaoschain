@@ -87,17 +87,17 @@ func run(cmd *cobra.Command, args []string) {
 	//new agent client
 	agentUrl := strings.TrimRight(appConfig.App.AgentUrl, "/")
 	logger.Info("agent url: %s", agentUrl)
-	agent.ElizaCli, err = agent.NewElizaClient(agentUrl, logger)
-	if err != nil {
-		fmt.Printf("ERROR:new eliza client err %s\n", err.Error())
-	}
+	// agent.ElizaCli, err = agent.NewElizaClient(agentUrl, logger)
+	// if err != nil {
+	// 	fmt.Printf("ERROR:new eliza client err %s\n", err.Error())
+	// }
 	fmt.Println("Using mock eliza client!")
-	agent.ElizaCli = &agent.MockClient{}
+	agent.ClientInstance = &agent.MockClient{}
 
 	// new app
 	appConfig.App.Home = homeDir
 	appConfig.App.TimeoutCommit = uint64(appConfig.Consensus.TimeoutCommit.Seconds())
-	app, err := app.NewHACApp(appConfig.App, agent.ElizaCli, logger)
+	app, err := app.NewHACApp(appConfig.App, agent.ClientInstance, logger)
 	if err != nil {
 		log.Fatalf("new App err:%v", err)
 	}
