@@ -39,11 +39,12 @@ type DiscussionTx struct {
 }
 
 type ProposalTx struct {
-	EndHeight uint64 `json:"endHeight"`
-	ImageUrl  string `json:"imageUrl"`
-	Title     string `json:"title"`
-	Link      string `json:"link"`
-	Data      []byte `json:"data"`
+	EndHeight       uint64 `json:"endHeight"`
+	ImageUrl        string `json:"imageUrl"`
+	Title           string `json:"title"`
+	Link            string `json:"link"`
+	Data            []byte `json:"data"`
+	ExpireTimestamp uint   `json:"expire_timestamp"`
 }
 
 type SettleProposalTx struct {

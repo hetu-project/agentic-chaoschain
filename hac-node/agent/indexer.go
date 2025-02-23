@@ -24,6 +24,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
+var Indexer *ChainIndexer
+
 type ChainIndexer struct {
 	logger        cmtlog.Logger
 	Url           string
@@ -35,7 +37,7 @@ type ChainIndexer struct {
 	BlockStore    *store.BlockStore
 	appConfig     *app_config.Config
 	pv            *crypto.PV
-	localAddress  string
+	LocalAddress  string
 	ChainId       string
 	chainUrl      string
 }
@@ -87,7 +89,7 @@ func NewChainIndexer(logger cmtlog.Logger, dbPath string, chainUrl string, bs *s
 		BlockStore:    bs,
 		appConfig:     appConfig,
 		pv:            pv,
-		localAddress:  localAddress,
+		LocalAddress:  localAddress,
 		chainUrl:      chainUrl,
 		ChainId:       chainId,
 	}
@@ -134,17 +136,6 @@ func (c *ChainIndexer) handleEventGrant(ctx context.Context, event abci.Event, h
 		Stake:    ev.Amount,
 		AgentUrl: ev.AgentUrl,
 		Name:     ev.Name,
-	}
-
-	cli, err := NewElizaClient(ev.AgentUrl, c.logger)
-	if err != nil {
-		c.logger.Error("new eliza client fail", "err", err)
-	} else {
-		hp, err := cli.GetHeadPhoto(ctx)
-		if err != nil {
-			c.logger.Error("get head photo fail", "err", err)
-		}
-		val.HeadPhoto = hp
 	}
 
 	if err := c.db.Save(&val).Error; err != nil {
@@ -393,35 +384,15 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 		}
 
 		val := ValidatorAgent{
-			Id:       acc.Index,
-			Address:  acc.Address(),
-			Stake:    acc.Stake,
-			AgentUrl: acc.AgentUrl,
-			Name:     acc.Name,
+			Id:      acc.Index,
+			Address: acc.Address(),
+			Stake:   acc.Stake,
+			Name:    acc.Name,
 		}
-
-		cli, err := NewElizaClient(val.AgentUrl, c.logger)
-		if err != nil {
-			c.logger.Error("new eliza client fail", "err", err)
-		} else {
-			hp, err := cli.GetHeadPhoto(ctx)
-			if err != nil {
-				c.logger.Error("get head photo fail", "err", err)
-			}
-			val.HeadPhoto = hp
-		}
-
 		if err := c.db.Save(val).Error; err != nil {
 			panic(err)
 		}
 	}
-
-	go func() {
-		for {
-			time.Sleep(10 * time.Second)
-			c.fillAgentSelfIntro()
-		}
-	}()
 
 	defer ticker.Stop()
 	for {
@@ -492,6 +463,97 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 		}
 	}
 }
+func (c *ChainIndexer) sendDiscussion(proposal uint64, text string) error {
+	cli, err := comethttp.New(c.chainUrl, "/websocket")
+	if err != nil {
+		c.logger.Error("new client fail", "err", err)
+		return err
+	}
+	act, err := queryAccount(cli, 0, c.LocalAddress)
+	if err != nil {
+		return err
+	}
+	btx := tx.HACTx{
+		Version:   tx.HACTxVersion1,
+		Nonce:     act.Nonce,
+		Validator: act.Index,
+	}
+	discussion := &tx.DiscussionTx{
+		Proposal: proposal,
+		Data:     []byte(text),
+	}
+	btx.Tx = discussion
+	btx.Type = tx.HACTxTypeDiscussion
+	dat, err := btx.SigData([]byte(c.ChainId))
+	if err != nil {
+		c.logger.Error("sign tx fail", "err", err)
+		return err
+	}
+	sigs := [][]byte{}
+	sig, err := c.pv.Sign(dat)
+	if err != nil {
+		c.logger.Error("sign tx fail", "err", err)
+		return err
+	}
+	sigs = append(sigs, sig)
+	btx.Sig = sigs
+	dat, _ = json.Marshal(btx)
+	_, err = cli.BroadcastTxSync(context.Background(), dat)
+	if err != nil {
+		c.logger.Error("broadcast tx fail", "err", err)
+		return err
+	}
+	c.logger.Info("send discussion", "proposal", proposal, "comment", text)
+	return nil
+}
+
+func (c *ChainIndexer) postPR(data, title string) error {
+	cli, err := comethttp.New(c.chainUrl, "/websocket")
+	if err != nil {
+		c.logger.Error("new client fail", "err", err)
+		return err
+	}
+	act, err := queryAccount(cli, 0, c.LocalAddress)
+	if err != nil {
+		return err
+	}
+	btx := tx.HACTx{
+		Version:   tx.HACTxVersion1,
+		Nonce:     act.Nonce,
+		Validator: act.Index,
+	}
+	pr := &tx.ProposalTx{
+		EndHeight:       1000000,
+		ImageUrl:        "",
+		Title:           title,
+		Link:            "",
+		Data:            []byte(data),
+		ExpireTimestamp: uint(time.Now().Add(time.Minute * 3).Unix()),
+	}
+	btx.Tx = pr
+	btx.Type = tx.HACTxTypeProposal
+	dat, err := btx.SigData([]byte(c.ChainId))
+	if err != nil {
+		c.logger.Error("sign tx fail", "err", err)
+		return err
+	}
+	sigs := [][]byte{}
+	sig, err := c.pv.Sign(dat)
+	if err != nil {
+		c.logger.Error("sign tx fail", "err", err)
+		return err
+	}
+	sigs = append(sigs, sig)
+	btx.Sig = sigs
+	dat, _ = json.Marshal(btx)
+	_, err = cli.BroadcastTxSync(context.Background(), dat)
+	if err != nil {
+		c.logger.Error("broadcast tx fail", "err", err)
+		return err
+	}
+	c.logger.Info("post PR", "title", title)
+	return nil
+}
 
 func (c *ChainIndexer) settlePR() {
 	c.logger.Info("start settle PR")
@@ -500,7 +562,7 @@ func (c *ChainIndexer) settlePR() {
 		c.logger.Error("get proposals fail", "err", err)
 	}
 	for _, p := range proposals {
-		if p.ProposerAddress == c.localAddress {
+		if p.ProposerAddress == c.LocalAddress {
 			_, cnt, err := c.getDiscussionByProposal(p.Id, 0, 1)
 			if cnt < 15 {
 				continue
@@ -510,7 +572,7 @@ func (c *ChainIndexer) settlePR() {
 				c.logger.Error("new client fail", "err", err)
 				return
 			}
-			act, err := queryAccount(cli, 0, c.localAddress)
+			act, err := queryAccount(cli, 0, c.LocalAddress)
 			if err != nil {
 				return
 			}
@@ -581,38 +643,6 @@ func (c *ChainIndexer) randomDiscuss() {
 		return
 	}
 	c.logger.Info("comment proposal", "proposal", randProposal.Id, "comment", comment)
-}
-
-func (c *ChainIndexer) fillAgentSelfIntro() {
-	// find agent where self_intro is ""
-	var agents []ValidatorAgent
-	err := c.db.Where("self_intro = ?", "").Find(&agents).Error
-	if err != nil {
-		c.logger.Error("find agent fail", "err", err)
-		return
-	}
-	for _, a := range agents {
-		if a.AgentUrl != "" {
-			if _, ok := c.elizaClients[a.Address]; !ok {
-				client, err := NewElizaClient(a.AgentUrl, c.logger)
-				if err != nil {
-					c.logger.Error("new eliza client fail", "err", err)
-					continue
-				}
-				c.elizaClients[a.Address] = client
-			}
-			selfIntro, err := c.elizaClients[a.Address].GetSelfIntro(context.Background())
-			if err != nil {
-				c.logger.Error("get self intro fail", "err", err)
-				continue
-			}
-			a.SelfIntro = selfIntro
-			if err := c.db.Save(&a).Error; err != nil {
-				c.logger.Error("save agent fail", "err", err)
-				continue
-			}
-		}
-	}
 }
 
 func (c *ChainIndexer) queryAccount(ctx context.Context, index uint64, address string) (*state.Account, error) {
@@ -760,6 +790,10 @@ func (c *ChainIndexer) getValidators() ([]ValidatorAgent, error) {
 	return validators, nil
 }
 
+func (c *ChainIndexer) GetValidatorByAddress(address string) (*ValidatorAgent, error) {
+	return c.getValidatorByAddress(address)
+}
+
 func (c *ChainIndexer) getValidatorByAddress(address string) (*ValidatorAgent, error) {
 	var val ValidatorAgent
 	err := c.db.Where("address = ?", address).First(&val).Error
@@ -767,6 +801,10 @@ func (c *ChainIndexer) getValidatorByAddress(address string) (*ValidatorAgent, e
 		return nil, err
 	}
 	return &val, nil
+}
+
+func (c *ChainIndexer) updateValidator(val *ValidatorAgent) error {
+	return c.db.Save(val).Error
 }
 
 func (c *ChainIndexer) getGrants(page int, pageSize int) ([]Grant, uint64, error) {

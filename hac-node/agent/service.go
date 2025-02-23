@@ -32,6 +32,8 @@ func NewService(ListenAddr string, indexer *ChainIndexer) *Service {
 	g.GET("/manifesto", s.handleGetManifesto)
 	g.GET("/network-status", s.handleGetNetworkStatus)
 	g.GET("/latest-blocks", s.handleGetLatestBlocks)
+	g.POST("/register-agent", s.handleRegisterAgent)
+	g.POST("/post-pr", s.handlePostPr)
 	return s
 }
 
@@ -192,6 +194,57 @@ type BlockInfo struct {
 	ProposalId      int64  `json:"proposalId"`
 	Discussions     uint64 `json:"discussions"`
 	TransactionCnt  uint64 `json:"transactionCnt"`
+}
+
+type PostPrReq struct {
+	Title string `json:"title"`
+	Data  string `json:"data"`
+}
+
+func (s *Service) handlePostPr(c *gin.Context) {
+	var requestData PostPrReq
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := s.indexer.postPR(requestData.Data, requestData.Title)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+type RegisterAgentReq struct {
+	Name      string `json:"name"`
+	AgentUrl  string `json:"agentUrl"`
+	SelfIntro string `json:"selfIntro"`
+}
+
+func (s *Service) handleRegisterAgent(c *gin.Context) {
+	var requestData RegisterAgentReq
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	validator, err := s.indexer.getValidatorByAddress(s.indexer.LocalAddress)
+	if err != nil {
+		s.indexer.logger.Error("get local validator", "error", err)
+	}
+	if validator == nil || validator.Id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "local validator not found"})
+		return
+	}
+	validator.AgentUrl = requestData.AgentUrl
+	validator.SelfIntro = requestData.SelfIntro
+	validator.Name = requestData.Name
+	err = s.indexer.updateValidator(validator)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ElizaCli = NewAgentClient(validator.AgentUrl, s.indexer.logger)
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 type GetLatestBlocksResponse struct {

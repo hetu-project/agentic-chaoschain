@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/calehh/hac-app/crypto"
 	"github.com/calehh/hac-app/tx"
@@ -79,11 +80,12 @@ func newProposalRun(cmd *cobra.Command, args []string) {
 		}
 	}
 	stx := &tx.ProposalTx{
-		EndHeight: 1000000,
-		ImageUrl:  "",
-		Title:     newProposalArgs.Title,
-		Link:      "",
-		Data:      []byte(newProposalArgs.Data),
+		EndHeight:       1000000,
+		ImageUrl:        "",
+		Title:           newProposalArgs.Title,
+		Link:            "",
+		Data:            []byte(newProposalArgs.Data),
+		ExpireTimestamp: uint(time.Now().Add(time.Minute * 2).Unix()),
 	}
 	btx.Tx = stx
 	btx.Type = tx.HACTxTypeProposal

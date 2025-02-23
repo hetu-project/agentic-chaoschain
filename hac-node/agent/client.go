@@ -20,7 +20,7 @@ var DiscussionRate = 0
 var DiscussionTrigger = 0
 
 type Client interface {
-	IfProcessProposal(ctx context.Context, data []byte) (bool, error)
+	IfProcessProposal(ctx context.Context, proposal string, title string) (bool, error)
 	IfAcceptProposal(ctx context.Context, proposal uint64, voter string) (bool, error)
 	IfGrantNewMember(ctx context.Context, validator uint64, proposer string, amount uint64, statement string) (bool, error)
 	CommentPropoal(ctx context.Context, proposal uint64, speaker string) (string, error)
@@ -32,6 +32,7 @@ type Client interface {
 
 var _ Client = &MockClient{}
 var _ Client = &ElizaClient{}
+var _ Client = &AgentClient{}
 
 type ElizaClient struct {
 	Url     string
@@ -267,7 +268,7 @@ func (e *ElizaClient) IfAcceptProposal(ctx context.Context, proposal uint64, vot
 	return false, nil
 }
 
-func (e *ElizaClient) IfProcessProposal(ctx context.Context, data []byte) (bool, error) {
+func (e *ElizaClient) IfProcessProposal(ctx context.Context, proposal,title string) (bool, error) {
 	return true, nil
 }
 
@@ -306,6 +307,6 @@ func (m *MockClient) IfGrantNewMember(ctx context.Context, validator uint64, pro
 	return true, nil
 }
 
-func (m *MockClient) IfProcessProposal(ctx context.Context, data []byte) (bool, error) {
+func (m *MockClient) IfProcessProposal(ctx context.Context, proposal,title string) (bool, error) {
 	return true, nil
 }

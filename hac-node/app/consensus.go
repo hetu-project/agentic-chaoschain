@@ -317,7 +317,12 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 			}
 			proposerAct = true
 			stx := btx.Tx.(*tx.ProposalTx)
-			pass, err := agent.ElizaCli.IfProcessProposal(ctx, stx.Data)
+			if time.Now().Unix() > int64(stx.ExpireTimestamp) {
+				app.logger.Info("proposal expire ignored", "expire", stx.ExpireTimestamp)
+				code = tx.VoteIgnoreProposal
+				continue
+			}
+			pass, err := agent.ElizaCli.IfProcessProposal(ctx, string(stx.Data), stx.Title)
 			if err != nil {
 				return 0, err
 			}
@@ -338,6 +343,7 @@ func (app *HACApp) getCode(ctx context.Context, st *state.State, txs [][]byte) (
 				return 0, errors.New("voter not found")
 			}
 			if time.Now().Unix() > int64(stx.ExpireTimestamp) {
+				app.logger.Info("proposal expire reject", "expire", stx.ExpireTimestamp)
 				code = tx.VoteRejectProposal
 				continue
 			}

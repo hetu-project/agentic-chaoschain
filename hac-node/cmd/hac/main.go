@@ -15,6 +15,7 @@ func main() {
 	clCmd.AddCommand(grantCmd)
 	clCmd.AddCommand(pubkeyCmd)
 	clCmd.AddCommand(signCmd)
+	clCmd.AddCommand(mockCmd)
 	if err := clCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"strings"
 	"syscall"
 	"time"
 
@@ -84,16 +83,6 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatalf("failed to parse log level: %v", err)
 	}
 
-	//new agent client
-	agentUrl := strings.TrimRight(appConfig.App.AgentUrl, "/")
-	logger.Info("agent url: %s", agentUrl)
-	agent.ElizaCli, err = agent.NewElizaClient(agentUrl, logger)
-	if err != nil {
-		fmt.Printf("ERROR:new eliza client err %s\n", err.Error())
-	}
-	fmt.Println("Using mock eliza client!")
-	agent.ElizaCli = &agent.MockClient{}
-
 	// new app
 	appConfig.App.Home = homeDir
 	appConfig.App.TimeoutCommit = uint64(appConfig.Consensus.TimeoutCommit.Seconds())
@@ -117,17 +106,21 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatalf("Creating node: %v", err)
 	}
 
+	fmt.Println("Using mock eliza client first!")
+	agent.ElizaCli = &agent.MockClient{}
+
+	// start app and node
 	app.Start(node.BlockStore())
 	err = node.Start()
 	if err != nil {
 		log.Fatalf("start comet node err %s", err.Error())
 	}
-
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 10)
 	if !node.IsRunning() {
 		log.Fatal("comet node unable to run")
 	}
-	// start indexer
+
+	// new indexer
 	agent.DiscussionRate = appConfig.App.DiscussionRate
 	rpcUrl, err := url.Parse(appConfig.Config.RPC.ListenAddress)
 	if err != nil {
@@ -135,14 +128,26 @@ func run(cmd *cobra.Command, args []string) {
 	}
 	rpcUrl.Scheme = "http"
 	dbPath := path.Join(appConfig.RootDir, "indexer.db")
-	node.BlockStore()
-	indexer, err := agent.NewChainIndexer(logger, dbPath, rpcUrl.String(), node.BlockStore(), appConfig)
+	agent.Indexer, err = agent.NewChainIndexer(logger, dbPath, rpcUrl.String(), node.BlockStore(), appConfig)
 	if err != nil {
 		log.Fatalf("new chain indexer err %s", err.Error())
 	}
-	go indexer.Start(context.TODO())
 
-	service := agent.NewService(appConfig.App.ServiceAddress, indexer)
+	//new agent client if registered
+	val, err := agent.Indexer.GetValidatorByAddress(agent.Indexer.LocalAddress)
+	if err != nil {
+		fmt.Println("Get validator by address err", err)
+	}
+	if val != nil && val.AgentUrl != "" {
+		fmt.Println("Using workshop client url:", val.AgentUrl)
+		agent.ElizaCli = agent.NewAgentClient(val.AgentUrl, logger)
+	}
+
+	// start indexer
+	go agent.Indexer.Start(context.TODO())
+
+	// start rpc service
+	service := agent.NewService(appConfig.App.ServiceAddress, agent.Indexer)
 	go service.Start()
 
 	defer func() {

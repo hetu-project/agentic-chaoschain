@@ -1393,7 +1393,7 @@ func (cs *State) defaultDoPrevote(height int64, round int32) {
 	// Prevote cs.ProposalBlock
 	// NOTE: the proposal signature is validated when it is received,
 	// and the proposal block parts are validated as they are received (against the merkle hash in the proposal)
-	logger.Debug("prevote step: ProposalBlock is valid", "voteCode", voteCode)
+	logger.Info("prevote step: ProposalBlock is valid", "voteCode", voteCode)
 	cs.signAddVote(cmtproto.PrevoteType, cs.ProposalBlock.Hash(), cs.ProposalBlockParts.Header(), nil, voteCode)
 }
 
@@ -1450,9 +1450,13 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 		cs.updateRoundStep(round, cstypes.RoundStepPrecommit)
 		cs.newStep()
 	}()
-
+	cs.privValidatorPubKey.Address()
 	// check for a polka
 	blockID, ok, voteCode := cs.Votes.Prevotes(round).TwoThirdsMajority()
+	selfPrevote := cs.Votes.Prevotes(round).GetByAddress(cs.privValidatorPubKey.Address())
+	if selfPrevote != nil {
+		voteCode = selfPrevote.VoteCode
+	}
 
 	// If we don't have a polka, we must precommit nil.
 	if !ok {
@@ -2469,7 +2473,7 @@ func (cs *State) signAddVote(
 			hasExt, extEnabled, vote.Height, vote.Type))
 	}
 	cs.sendInternalMessage(msgInfo{&VoteMessage{vote}, ""})
-	cs.Logger.Debug("signed and pushed vote", "height", cs.Height, "round", cs.Round, "vote", vote)
+	cs.Logger.Info("signed and pushed vote", "height", cs.Height, "round", cs.Round, "vote", vote)
 }
 
 // updatePrivValidatorPubKey get's the private validator public key and
