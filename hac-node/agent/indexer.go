@@ -24,6 +24,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
+const ProposalDiscussionWaitBlocks = 15
+
 var Indexer *ChainIndexer
 
 type ChainIndexer struct {
@@ -455,9 +457,7 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 				if b.SyncInfo.LatestBlockHeight == c.Height+1 {
 					c.randomDiscuss()
 				}
-				if c.Height%5 == 0 {
-					c.settlePR()
-				}
+				c.settlePR(uint64(c.Height))
 				c.Height++
 			}
 		}
@@ -555,60 +555,63 @@ func (c *ChainIndexer) postPR(data, title string) error {
 	return nil
 }
 
-func (c *ChainIndexer) settlePR() {
+func (c *ChainIndexer) settlePR(currentHeight uint64) {
 	c.logger.Info("start settle PR")
 	proposals, err := c.getProposalsByStatus(uint64(hac_types.ProposalStatusProcessing), 0, 100)
 	if err != nil {
 		c.logger.Error("get proposals fail", "err", err)
 	}
-	for _, p := range proposals {
-		if p.ProposerAddress == c.LocalAddress {
-			_, cnt, err := c.getDiscussionByProposal(p.Id, 0, 1)
-			if cnt < 15 {
-				continue
+	var p Proposal
+	for _, pr := range proposals {
+		if pr.ProposerAddress == c.LocalAddress {
+			if currentHeight-pr.NewHeight >= ProposalDiscussionWaitBlocks && pr.Status == uint64(hac_types.ProposalStatusProcessing) {
+				p = pr
 			}
-			cli, err := comethttp.New(c.chainUrl, "/websocket")
-			if err != nil {
-				c.logger.Error("new client fail", "err", err)
-				return
-			}
-			act, err := queryAccount(cli, 0, c.LocalAddress)
-			if err != nil {
-				return
-			}
-			btx := tx.HACTx{
-				Version:   tx.HACTxVersion1,
-				Nonce:     act.Nonce,
-				Validator: act.Index,
-			}
-			stx := &tx.SettleProposalTx{
-				Proposal:        p.Id,
-				ExpireTimestamp: uint(time.Now().Unix() + 60*3),
-			}
-			btx.Tx = stx
-			btx.Type = tx.HACTxTypeSettleProposal
-			dat, err := btx.SigData([]byte(c.ChainId))
-			if err != nil {
-				c.logger.Error("sign tx fail", "err", err)
-				return
-			}
-			sigs := [][]byte{}
-			sig, err := c.pv.Sign(dat)
-			if err != nil {
-				c.logger.Error("sign tx fail", "err", err)
-				return
-			}
-			sigs = append(sigs, sig)
-			btx.Sig = sigs
-			dat, _ = json.Marshal(btx)
-			_, err = cli.BroadcastTxSync(context.Background(), dat)
-			if err != nil {
-				c.logger.Error("broadcast tx fail", "err", err)
-				return
-			}
-			c.logger.Info("settle proposal", "proposal", p.Id)
 		}
 	}
+	if p.Id == 0 {
+		return
+	}
+	cli, err := comethttp.New(c.chainUrl, "/websocket")
+	if err != nil {
+		c.logger.Error("new client fail", "err", err)
+		return
+	}
+	act, err := queryAccount(cli, 0, c.LocalAddress)
+	if err != nil {
+		return
+	}
+	btx := tx.HACTx{
+		Version:   tx.HACTxVersion1,
+		Nonce:     act.Nonce,
+		Validator: act.Index,
+	}
+	stx := &tx.SettleProposalTx{
+		Proposal:        p.Id,
+		ExpireTimestamp: uint(time.Now().Unix() + 60*3),
+	}
+	btx.Tx = stx
+	btx.Type = tx.HACTxTypeSettleProposal
+	dat, err := btx.SigData([]byte(c.ChainId))
+	if err != nil {
+		c.logger.Error("sign tx fail", "err", err)
+		return
+	}
+	sigs := [][]byte{}
+	sig, err := c.pv.Sign(dat)
+	if err != nil {
+		c.logger.Error("sign tx fail", "err", err)
+		return
+	}
+	sigs = append(sigs, sig)
+	btx.Sig = sigs
+	dat, _ = json.Marshal(btx)
+	_, err = cli.BroadcastTxSync(context.Background(), dat)
+	if err != nil {
+		c.logger.Error("broadcast tx fail", "err", err)
+		return
+	}
+	c.logger.Info("settle proposal", "proposal", p.Id)
 }
 
 func (c *ChainIndexer) randomDiscuss() {
@@ -628,8 +631,7 @@ func (c *ChainIndexer) randomDiscuss() {
 	}
 	suitePrs := make([]Proposal, 0)
 	for _, p := range proposals {
-		_, cnt, err := c.getDiscussionByProposal(p.Id, 0, 1)
-		if err == nil && cnt < 15 {
+		if p.Status == uint64(hac_types.ProposalStatusProcessing) {
 			suitePrs = append(suitePrs, p)
 		}
 	}
