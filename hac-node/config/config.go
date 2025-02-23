@@ -143,9 +143,9 @@ func InitializeNodeOnly(config *Config) {
 
 func DefaultHACCometConfig() *config.Config {
 	cometConfig := config.DefaultConfig()
-	cometConfig.Consensus.TimeoutPropose = time.Second * 10
-	cometConfig.Consensus.TimeoutPrevote = time.Second * 1
-	cometConfig.Consensus.TimeoutPrecommit = time.Second * 1
-	cometConfig.Consensus.TimeoutCommit = time.Millisecond * 1200
+	cometConfig.Consensus.TimeoutPropose = time.Second * 20
+	cometConfig.Consensus.TimeoutPrevote = time.Second * 20
+	cometConfig.Consensus.TimeoutPrecommit = time.Second * 20
+	cometConfig.Consensus.TimeoutCommit = time.Second * 20
 	return cometConfig
 }

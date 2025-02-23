@@ -16,6 +16,7 @@ func main() {
 	clCmd.AddCommand(pubkeyCmd)
 	clCmd.AddCommand(signCmd)
 	clCmd.AddCommand(mockCmd)
+	clCmd.AddCommand(showNodeIDCmd)
 	if err := clCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
