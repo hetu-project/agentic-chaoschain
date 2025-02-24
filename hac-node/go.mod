@@ -1,4 +1,4 @@
-module github.com/calehh/hac-app
+module github.com/hetu-project/hetu-chaoschain
 
 go 1.22.7
 

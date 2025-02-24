@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/calehh/hac-app/crypto"
-	"github.com/calehh/hac-app/tx"
 	"github.com/cometbft/cometbft/rpc/client/http"
+	"github.com/hetu-project/hetu-chaoschain/crypto"
+	"github.com/hetu-project/hetu-chaoschain/tx"
 	"github.com/spf13/cobra"
 )
 

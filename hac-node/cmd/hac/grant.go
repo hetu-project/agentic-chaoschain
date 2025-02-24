@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/calehh/hac-app/crypto"
-	"github.com/calehh/hac-app/tx"
-	"github.com/calehh/hac-app/types"
 	"github.com/cometbft/cometbft/rpc/client/http"
+	"github.com/hetu-project/hetu-chaoschain/crypto"
+	"github.com/hetu-project/hetu-chaoschain/tx"
+	"github.com/hetu-project/hetu-chaoschain/types"
 	"github.com/spf13/cobra"
 )
 

@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/calehh/hac-app/state"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	cmtlog "github.com/cometbft/cometbft/libs/log"
+	"github.com/hetu-project/hetu-chaoschain/state"
 )
 
 func (app *HACApp) Query(ctx context.Context, req *abcitypes.RequestQuery) (res *abcitypes.ResponseQuery, err error) {
