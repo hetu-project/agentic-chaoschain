@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/calehh/hac-app/config"
-	app_config "github.com/calehh/hac-app/config"
-	"github.com/calehh/hac-app/types"
 	"github.com/cometbft/cometbft/crypto"
 	cmttypes "github.com/cometbft/cometbft/types"
+	"github.com/hetu-project/hetu-chaoschain/config"
+	app_config "github.com/hetu-project/hetu-chaoschain/config"
+	"github.com/hetu-project/hetu-chaoschain/types"
 	"github.com/spf13/cobra"
 )
 
