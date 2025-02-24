@@ -1453,6 +1453,10 @@ func (cs *State) enterPrecommit(height int64, round int32) {
 
 	// check for a polka
 	blockID, ok, voteCode := cs.Votes.Prevotes(round).TwoThirdsMajority()
+	selfPrevote := cs.Votes.Prevotes(round).GetByAddress(cs.privValidatorPubKey.Address())
+	if selfPrevote != nil {
+		voteCode = selfPrevote.VoteCode
+	}
 
 	// If we don't have a polka, we must precommit nil.
 	if !ok {
@@ -2440,7 +2444,7 @@ func (cs *State) signAddVote(
 	block *types.Block,
 	voteCode int64,
 ) {
-	cs.Logger.Debug("signAddVote", "msgType", msgType, "height", cs.Height, "round", cs.Round, "voteCode", voteCode)
+	cs.Logger.Info("signAddVote", "msgType", msgType, "height", cs.Height, "round", cs.Round, "voteCode", voteCode)
 	if cs.privValidator == nil { // the node does not have a key
 		return
 	}
