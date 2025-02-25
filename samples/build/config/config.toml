@@ -1,0 +1,9 @@
+[network]
+http_url = "http://127.0.0.1"
+http_port = 8633
+read_timeout = 30
+write_timeout = 30
+idle_timeout = 120
+enable_tls = false
+auth_token = "123456"
+agent_url = "http://127.0.0.1:8021"
