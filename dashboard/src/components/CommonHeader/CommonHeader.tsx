@@ -12,10 +12,10 @@ const CommonHeader: React.FC<Props> = (props) => {
   const { name } = props;
   return (
     <Layout>
-      <div className='baseHeader'>
-        <span className='title'>{props?.name ?? ''}</span>
-        {props?.rightNode ?? ""}
-      </div>
+      {/*<div className='baseHeader'>*/}
+      {/*  <span className='title'>{props?.name ?? ''}</span>*/}
+      {/*  {props?.rightNode ?? ""}*/}
+      {/*</div>*/}
     </Layout>
   );
 };
