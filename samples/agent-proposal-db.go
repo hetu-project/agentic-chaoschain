@@ -12,7 +12,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-// DiscussionItem 结构体定义了讨论的属性
+// DiscussionItem defines the properties of a discussion
 type DiscussionItem struct {
 	ID          uint64 `json:"id"`
 	Author      string `json:"author"`
@@ -20,7 +20,7 @@ type DiscussionItem struct {
 	Timestamp   int64  `json:"timestamp"`
 }
 
-// ProposalItem 结构体定义了提案的所有属性
+// ProposalItem defines all properties of a proposal
 type ProposalItem struct {
 	ProposalID       uint64           `json:"proposalId"`
 	ValidatorAddress string           `json:"validatorAddress"`
@@ -31,12 +31,12 @@ type ProposalItem struct {
 	Discussions      []DiscussionItem `json:"discussions"`
 }
 
-// ProposalDB 提供了提案数据的存储和检索功能
+// ProposalDB provides storage and retrieval functionality for proposal data
 type ProposalDB struct {
 	db *leveldb.DB
 }
 
-// NewProposalDB 创建并初始化一个新的提案数据库
+// NewProposalDB creates and initializes a new proposal database
 func NewProposalDB(dataDir string) (*ProposalDB, error) {
 	dbPath := filepath.Join(dataDir, "proposals")
 	db, err := leveldb.OpenFile(dbPath, nil)
@@ -47,28 +47,28 @@ func NewProposalDB(dataDir string) (*ProposalDB, error) {
 	return &ProposalDB{db: db}, nil
 }
 
-// Close 关闭数据库连接
+// Close closes the database connection
 func (pdb *ProposalDB) Close() error {
 	return pdb.db.Close()
 }
 
-// SaveProposal 将提案保存到数据库
+// SaveProposal saves a proposal to the database
 func (pdb *ProposalDB) SaveProposal(proposal *ProposalItem) error {
-	// 如果没有设置时间戳，设置当前时间
+	// If timestamp is not set, set the current time
 	if proposal.Timestamp == 0 {
 		proposal.Timestamp = time.Now().Unix()
 	}
 
-	// 将提案ID转换为键
+	// Convert proposal ID to key
 	key := fmt.Sprintf("proposal:%d", proposal.ProposalID)
 
-	// 将提案序列化为JSON
+	// Serialize the proposal to JSON
 	data, err := json.Marshal(proposal)
 	if err != nil {
 		return fmt.Errorf("failed to marshal proposal: %w", err)
 	}
 
-	// 保存到数据库
+	// Save to database
 	err = pdb.db.Put([]byte(key), data, nil)
 	if err != nil {
 		return fmt.Errorf("failed to save proposal to db: %w", err)
@@ -77,14 +77,14 @@ func (pdb *ProposalDB) SaveProposal(proposal *ProposalItem) error {
 	return nil
 }
 
-// GetProposal 通过ID从数据库获取提案
+// GetProposal retrieves a proposal by ID from the database
 func (pdb *ProposalDB) GetProposal(proposalID uint64) (*ProposalItem, error) {
 	key := fmt.Sprintf("proposal:%d", proposalID)
 
 	data, err := pdb.db.Get([]byte(key), nil)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
-			return nil, nil // 提案不存在
+			return nil, nil // Proposal doesn't exist
 		}
 		return nil, fmt.Errorf("failed to get proposal from db: %w", err)
 	}
@@ -97,7 +97,7 @@ func (pdb *ProposalDB) GetProposal(proposalID uint64) (*ProposalItem, error) {
 	return &proposal, nil
 }
 
-// AddDiscussion 向特定的提案添加讨论
+// AddDiscussion adds a discussion to a specific proposal
 func (pdb *ProposalDB) AddDiscussion(proposalID uint64, author string, content string) error {
 	proposal, err := pdb.GetProposal(proposalID)
 	if err != nil {
@@ -107,7 +107,7 @@ func (pdb *ProposalDB) AddDiscussion(proposalID uint64, author string, content s
 		return fmt.Errorf("proposal with ID %d not found", proposalID)
 	}
 
-	// 创建新的讨论
+	// Create new discussion
 	newDiscussion := DiscussionItem{
 		ID:          uint64(len(proposal.Discussions) + 1),
 		Author:      author,
@@ -115,14 +115,14 @@ func (pdb *ProposalDB) AddDiscussion(proposalID uint64, author string, content s
 		Timestamp:   time.Now().Unix(),
 	}
 
-	// 添加到提案的讨论列表
+	// Add to the proposal's discussion list
 	proposal.Discussions = append(proposal.Discussions, newDiscussion)
 
-	// 保存更新后的提案
+	// Save the updated proposal
 	return pdb.SaveProposal(proposal)
 }
 
-// GetDiscussions 获取特定提案的所有讨论
+// GetDiscussions gets all discussions for a specific proposal
 func (pdb *ProposalDB) GetDiscussions(proposalID uint64) ([]DiscussionItem, error) {
 	proposal, err := pdb.GetProposal(proposalID)
 	if err != nil {
@@ -135,7 +135,7 @@ func (pdb *ProposalDB) GetDiscussions(proposalID uint64) ([]DiscussionItem, erro
 	return proposal.Discussions, nil
 }
 
-// UpdateVote 更新提案的投票结果
+// UpdateVote updates the voting result of a proposal
 func (pdb *ProposalDB) UpdateVote(proposalID uint64, vote string) error {
 	proposal, err := pdb.GetProposal(proposalID)
 	if err != nil {
@@ -149,13 +149,13 @@ func (pdb *ProposalDB) UpdateVote(proposalID uint64, vote string) error {
 	return pdb.SaveProposal(proposal)
 }
 
-// DeleteProposal 从数据库中删除提案
+// DeleteProposal deletes a proposal from the database
 func (pdb *ProposalDB) DeleteProposal(proposalID uint64) error {
 	key := fmt.Sprintf("proposal:%d", proposalID)
 	return pdb.db.Delete([]byte(key), nil)
 }
 
-// ListProposals 列出所有的提案
+// ListProposals lists all proposals
 func (pdb *ProposalDB) ListProposals() ([]*ProposalItem, error) {
 	var proposals []*ProposalItem
 	iter := pdb.db.NewIterator(nil, nil)
@@ -163,7 +163,7 @@ func (pdb *ProposalDB) ListProposals() ([]*ProposalItem, error) {
 
 	for iter.Next() {
 		key := string(iter.Key())
-		// 只处理提案键
+		// Only the proposal keys are processed
 		if len(key) >= 9 && key[:9] == "proposal:" {
 			var proposal ProposalItem
 			if err := json.Unmarshal(iter.Value(), &proposal); err != nil {
@@ -181,7 +181,7 @@ func (pdb *ProposalDB) ListProposals() ([]*ProposalItem, error) {
 	return proposals, nil
 }
 
-// GetProposalsByValidator 获取特定验证者的所有提案
+// GetProposalsByValidator gets all proposals from a specific validator
 func (pdb *ProposalDB) GetProposalsByValidator(validatorAddress string) ([]*ProposalItem, error) {
 	var proposals []*ProposalItem
 	iter := pdb.db.NewIterator(nil, nil)
@@ -206,7 +206,7 @@ func (pdb *ProposalDB) GetProposalsByValidator(validatorAddress string) ([]*Prop
 	return proposals, nil
 }
 
-// ExportProposalsToFile 将全部提案数据导出到指定文本文件
+// ExportProposalsToFile exports all proposal data to a specified text file
 func (pdb *ProposalDB) ExportProposalsToFile(filePath string) error {
 	proposals, err := pdb.ListProposals()
 	if err != nil {
@@ -242,14 +242,14 @@ func (pdb *ProposalDB) ExportProposalsToFile(filePath string) error {
 	return nil
 }
 
-// ExportProposalsToJSON 将全部提案数据导出为JSON文件
-// 如果文件路径包含目录不存在会自动创建，默认输出到当前目录的proposal-info.json
+// ExportProposalsToJSON exports all proposal data as JSON file
+// Automatically creates directories in path if missing, defaults to proposal-info.json in current directory
 func (pdb *ProposalDB) ExportProposalsToJSON(filePath string) error {
 	if filePath == "" {
 		filePath = "proposal-info.json"
 	}
 
-	// 确保目录存在
+	// Ensure directory exists
 	if dir := filepath.Dir(filePath); dir != "" {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
@@ -261,13 +261,13 @@ func (pdb *ProposalDB) ExportProposalsToJSON(filePath string) error {
 		return fmt.Errorf("failed to list proposals: %w", err)
 	}
 
-	// 创建格式化JSON数据
+	// Create formatted JSON data
 	jsonData, err := json.MarshalIndent(proposals, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	// 原子写入文件
+	// Write file atomically
 	if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
 		return fmt.Errorf("failed to write JSON file: %w", err)
 	}
@@ -275,7 +275,7 @@ func (pdb *ProposalDB) ExportProposalsToJSON(filePath string) error {
 	return nil
 }
 
-// GetNextProposalID 获取下一个可用的提案ID
+// GetNextProposalID gets the next available proposal ID
 func (pdb *ProposalDB) GetNextProposalID() (uint64, error) {
 	var maxID uint64 = 0
 	iter := pdb.db.NewIterator(nil, nil)
