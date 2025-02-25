@@ -58,7 +58,8 @@ func (h *HTTPHandler) AddProposal(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to save proposal: %v", err)})
 		return
 	}
-	h.logger.Println("AddProposal  ===== ok ======")
+
+	// Debug: Print the proposal to the proposal_info.json
 	h.proposalDB.ExportProposalsToJSON("proposal_info.json")
 	c.JSON(http.StatusOK, gin.H{"message": "Proposal added successfully", "proposalId": proposal.ProposalID})
 }

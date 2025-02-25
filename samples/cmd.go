@@ -58,12 +58,12 @@ func startAgentService() {
 	// Create HTTP serve
 	parsedURL, err := url.Parse(cfg.AgentUrl)
 	if err != nil {
-		logger.Fatalf("无法解析 AgentUrl: %v", err)
+		logger.Fatalf("Unable to parse AgentUrl: %v", err)
 	}
 
 	serverAddr := parsedURL.Host
 	if serverAddr == "" {
-		logger.Fatalf("无法从 AgentUrl 提取有效的主机名和端口: %s", cfg.AgentUrl)
+		logger.Fatalf("Unable to extract a valid hostname and port from AgentUrl: %s", cfg.AgentUrl)
 	}
 	srv := &http.Server{
 		Addr:    serverAddr,

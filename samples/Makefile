@@ -1,4 +1,4 @@
-# Go 项目编译配置
+# Go project build configuration
 APP_NAME = samples
 BUILD_DIR = build
 SRCS = $(wildcard *.go) $(wildcard */*.go)
