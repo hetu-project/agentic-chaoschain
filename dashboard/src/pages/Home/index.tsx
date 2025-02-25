@@ -105,7 +105,7 @@ const HomePage: React.FC = () => {
   };
    useEffect(() => {
      setPageStr(`${1+(pageNum - 1) * 6} - ${pageNum * 6 <= listTotal ? pageNum* 6: pageNum* 6 - Math.abs(pageNum * 6 - listTotal)}`)
-  },[pageNum,listTotal])
+   },[pageNum,listTotal])
 
   return (
     <PageContainer
@@ -116,208 +116,166 @@ const HomePage: React.FC = () => {
       ghost
       className='homeContent'
     >
-      <div className='NB_container' >
-        <div className="status-row">
-          <Row gutter={[32, 20]}>
-            <Col span={12} xs={24}
-              sm={24}
-              md={24}
-              lg={24}
-              xl={24}
-              xxl={12}>
-              <Card className={'message-card'} title={'Network Status'}
-                style={{ background: 'rgb(239, 239, 239,0.52)', minHeight: '102px' }}>
-                <div className="status-content">
-                  <Descriptions styles={{
-                    label: { fontSize: '15px', lineHeight: '18px', wordBreak: 'break-all' },
-                    content: { fontSize: '15px', lineHeight: '18px' },
-                  }} column={
-                    {
-                      xxl: 4, // ≥1600px
-                      xl: 4,  // ≥1200px
-                      lg: 4,  // ≥992px
-                      md: 1,  // ≥768px
-                      sm: 1,  // ≥576px
-                      xs: 1   // <576px
-                    }
-                  }>
-                    <Descriptions.Item label='Block Height'>{networkStatusData?.blockHeight || 0}</Descriptions.Item>
-                    <Descriptions.Item label='Latest Proposer'><a
-                      onClick={() => { history.push(`/agentDetail/${networkStatusData?.lastProposerAddress}`) }}
-                      style={{ textDecoration: 'underline' }}
-                    >{networkStatusData?.lastProposer || ''}</a></Descriptions.Item>
-                    <Descriptions.Item label='Proposals In Progress'>{networkStatusData?.proposalsInProgress || 0}</Descriptions.Item>
-                    <Descriptions.Item label='Proposals Decided'>{networkStatusData?.proposalsDecided || 0}</Descriptions.Item>
-                  </Descriptions>
-                </div>
-              </Card>
-            </Col>
-            <Col span={12}
-              xs={24}
-              sm={24}
-              md={24}
-              lg={24}
-              xl={24}
-              xxl={12}>
-              <Card className={'message-card'} title={'Latest Block'}
-                style={{ background: 'rgb(239, 239, 239,0.52)', minHeight: '102px' }}>
-                <div className="status-content">
-                  <Flex style={{ borderRadius: '7px', background: 'rgb(234, 234, 234,1)', padding: '10px' }}
+      <div style={{ padding: '16px 70px', background: 'white' }}>
+        <Row gutter={[32, 20]}>
+          <Col span={12}
+               xl={24}
+               xxl={24}>
+            <Card className={'message-card'} title={'Network Status'}
+                  style={{ background: 'rgb(239, 239, 239,0.52)', minHeight: '102px' }}>
+              <Descriptions styles={{
+                label: { fontSize: '15px', lineHeight: '18px', wordBreak: 'break-all' },
+                content: { fontSize: '15px', lineHeight: '18px' },
+              }} column={4}>
+                <Descriptions.Item label='Block Height'>{networkStatusData?.blockHeight || 0}</Descriptions.Item>
+                <Descriptions.Item label='Latest Proposer'><a
+                  onClick={() => {history.push(`/agentDetail/${networkStatusData?.lastProposerAddress}`)}}
+                  style={{ textDecoration: 'underline' }}
+                >{networkStatusData?.lastProposer || ''}</a></Descriptions.Item>
+                <Descriptions.Item label='Proposals In Progress'>{networkStatusData?.proposalsInProgress || 0}</Descriptions.Item>
+                <Descriptions.Item label='Proposals Decided'>{networkStatusData?.proposalsDecided || 0}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </Col>
+          {false && <Col span={12}
+                         xl={24}
+                         xxl={12}>
+            <Card className={'message-card'} title={'Latest Block'}
+                  style={{ background: 'rgb(239, 239, 239,0.52)', minHeight: '102px' }}>
+              <Flex style={{  borderRadius: '7px', background: 'rgb(234, 234, 234,1)', padding: '10px' }}
                     gap={16} align={'center'} justify={'space-between'}>
-                    <span>Block #01</span>
-                    <Divider type='vertical' />
-                    <Descriptions style={{ flex: '1' }} column={
-                      {
-                        xxl: 5, // ≥1600px
-                        xl: 5,  // ≥1200px
-                        lg: 5,  // ≥992px
-                        md: 1,  // ≥768px
-                        sm: 1,  // ≥576px
-                        xs: 1   // <576px
-                      }
-                    }
-                      styles={
-                        {
-                          label: { fontSize: '15px', lineHeight: '18px', wordBreak: 'break-all' },
-                          content: { fontSize: '15px', lineHeight: '18px' },
-                        }
-                      }
-                    >
-                      <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Height'>{latestBlocksData?.height || '-'}</Descriptions.Item>
-                      <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Transactions'>{latestBlocksData?.transactionCnt || '-'}</Descriptions.Item>
-                      <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Proposer'><a
-                        onClick={() => { history.push(`/agentDetail/${latestBlocksData?.proposerAddress}`) }}
-                        style={{ textDecoration: 'underline' }}>{latestBlocksData?.proposer || ''}</a></Descriptions.Item>
-                      <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Proposal'><a
-                        onClick={() => { history.push(`/proposalDetail/${latestBlocksData?.proposalId}`) }}
-                        style={{ textDecoration: 'underline' }}>{(latestBlocksData?.proposalId && latestBlocksData?.proposalId > 0) || ''}</a></Descriptions.Item>
-                      <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Discussions'><a
-                        onClick={() => { history.push(`/proposalDetail/${latestBlocksData?.proposalId}`) }}
-                        style={{ textDecoration: 'underline' }}>{latestBlocksData?.discussions || ''}</a></Descriptions.Item>
-                    </Descriptions>
-                  </Flex>
-                </div>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-        <div className="card-grid">
-          <Row style={{ marginTop: '16px' }} gutter={[32, 16]}>
-            {agentsList?.map((item, index) => index < 8 && <Col key={`name-${index}`}
-              span={3}
-              xs={8}
-              sm={8}
-              md={6}
-              lg={6}
-              xl={3}
-              xxl={3}
-            >
-
-              <StyledCard className={'name-card'} hoverable size={'small'} onClick={() => {
-                history.push(`/agentDetail/${item?.address}`);
+                <span>Block #01</span>
+                <Divider type='vertical' />
+                <Descriptions style={{ flex: '1' }} column={5}
+                              styles={
+                                {
+                                  label: { fontSize: '15px', lineHeight: '18px', wordBreak: 'break-all' },
+                                  content: { fontSize: '15px', lineHeight: '18px' },
+                                }
+                              }
+                >
+                  <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Height'>{latestBlocksData?.height || '-'}</Descriptions.Item>
+                  <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Transactions'>{latestBlocksData?.transactionCnt || '-'}</Descriptions.Item>
+                  <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Proposer'><a
+                    onClick={() => {history.push(`/agentDetail/${latestBlocksData?.proposerAddress}`)}}
+                    style={{ textDecoration: 'underline' }}>{latestBlocksData?.proposer || ''}</a></Descriptions.Item>
+                  <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Proposal'><a
+                    onClick={() => {history.push(`/proposalDetail/${latestBlocksData?.proposalId}`)}}
+                    style={{ textDecoration: 'underline' }}>{(latestBlocksData?.proposalId && latestBlocksData?.proposalId > 0) || ''}</a></Descriptions.Item>
+                  <Descriptions.Item style={{ paddingInlineEnd: '0' }} label='-Discussions'><a
+                    onClick={() => {history.push(`/proposalDetail/${latestBlocksData?.proposalId}`)}}
+                    style={{ textDecoration: 'underline' }}>{latestBlocksData?.discussions || ''}</a></Descriptions.Item>
+                </Descriptions>
+              </Flex>
+            </Card>
+          </Col>}
+        </Row>
+        <Row style={{ marginTop: '16px' }} gutter={[32, 16]}>
+          {agentsList?.map((item, index) => index < 8 && <Col key={`name-${index}`} span={3}>
+            <StyledCard className={'name-card'} hoverable size={'small'} onClick={() => {
+              history.push(`/agentDetail/${item?.address}`);
+            }}>
+              <Flex vertical align={'center'} justify={'center'}>
+                <Image height={48} width={48} preview={false}
+                       src={item?.head_photo ?item?.head_photo :avatarList[index % 4]} />
+                <span style={{ marginTop: '4px' }}>{item?.name}</span>
+              </Flex>
+            </StyledCard>
+          </Col>)}
+        </Row>
+        <ProList
+          cardProps={{
+            bodyStyle: {
+              paddingInline: 0,
+              paddingBlock: 0,
+            },
+            ghost: true,
+          }}
+          itemCardProps={{
+            ghost: true,
+            bordered: false,
+          }}
+          ghost={true}
+          size={'small'}
+          actionRef={actionRef}
+          pagination={{
+            size: 'small',
+            defaultPageSize: 8,
+            showSizeChanger: false,
+            pageSize: 6,
+            showTotal: total => `Show rows : ${pageStr} / Total : ${total}`,
+            locale: {
+              items_per_page: '条/页',
+              jump_to: '前往',
+              page: '页'
+            },
+            onChange: (page, pageSize) => {
+              setPageNum(page)
+            },
+          }}
+          grid={{ gutter: 16, column: 3 }}
+          renderItem={(item: AGENTAPI.ProposalInfo, index) => (
+            <Col span={24}>
+              <StyledCard className={'base-card msg-card'} style={{ marginTop: '16px' }} hoverable onClick={() => {
+                history.push(`/proposalDetail/${item?.proposal?.id}`);
               }}>
-                <Flex vertical align={'center'} justify={'center'}>
-                  <Image height={48} width={48} preview={false}
-                    src={avatarList[index % 4]} />
-                  <span style={{ marginTop: '4px' }}>{item?.name}</span>
+                <Flex vertical justify={'start'} style={{ height: '260px' }}>
+                  <Flex style={{ padding: '0 18px' }} justify={'space-between'}>
+                    <Flex className={'name-card-title'} align={'center'} justify={'center'}>
+                      <Image width={36} height={36} preview={false}
+                             src={item?.proposal?.head_photo?.length ? item?.proposal?.head_photo : avatarList[index % 4]} />
+                      <span>{item?.proposal?.proposer_name}</span>
+                    </Flex>
+                    <Status status={item?.proposal?.status} />
+                  </Flex>
+                  <Flex style={{ padding: '0 18px' }}>
+                    <Typography.Text ellipsis className={'desc'}>
+                      {item?.proposal?.title}
+                    </Typography.Text>
+                  </Flex>
+                  <Flex style={{ padding: '0 18px' }}>
+                    <Typography.Text className={'expire'}>
+                      {`# Expire ${moment.unix(item?.proposal?.expire_timestamp || 0).format('YYYY-MM-DD HH:mm:ss')}`}
+                    </Typography.Text>
+                  </Flex>
+                  <Flex align={'center'} style={{ padding: '0 18px', marginTop: '-30px' }} flex={1}>
+                    {item?.proposal?.status !== 2
+                      ? <ProgressBar passPercent={getPassPercent(item) || 0} />
+                      : <Flex align={'center'}>
+                        <Image preview={false} style={{ marginTop: '-4px', paddingRight: '4px' }} src={image32} />
+                        <span style={{
+                          fontFamily: 'Inter',
+                          fontWeight: 400,
+                          fontSize: '18px',
+                          lineHeight: '22px',
+                          letterSpacing: 0,
+                        }}>{`${item?.discussionCnt} Discussions >>`}</span>
+                      </Flex>}
+                  </Flex>
+                  <Flex>
+                    <BottomProgressBar status={item?.proposal?.status} />
+                  </Flex>
                 </Flex>
               </StyledCard>
-            </Col>)}
-          </Row>
-          <ProList
-            cardProps={{
-              bodyStyle: {
-                paddingInline: 0,
-                paddingBlock: 0,
-              },
-              ghost: true,
-            }}
-            itemCardProps={{
-              ghost: true,
-              bordered: false,
-            }}
-            ghost={true}
-            size={'small'}
-            actionRef={actionRef}
-            pagination={{
-              size: 'small',
-              defaultPageSize: 8,
-              showSizeChanger: false,
-              pageSize: 6,
-              showTotal: total => `Show rows : ${pageStr} / Total : ${total}`,
-              locale: {
-                items_per_page: '条/页',
-                jump_to: '前往',
-                page: '页'
-              },
-              onChange: (page, pageSize) => {
-                setPageNum(page)
-              },
-            }}
-            grid={{ gutter: 16, column: 1 }}
-            renderItem={(item: AGENTAPI.ProposalInfo, index) => (
-              <Col span={24}>
-                <StyledCard className={'base-card msg-card'} style={{ marginTop: '16px' }} hoverable onClick={() => {
-                  history.push(`/proposalDetail/${item?.proposal?.id}`);
-                }}>
-                  <Flex vertical justify={'start'} style={{ height: '260px' }}>
-                    <Flex style={{ padding: '0 18px' }} justify={'space-between'}>
-                      <Flex className={'name-card-title'} align={'center'} justify={'center'}>
-                        <Image width={36} height={36} preview={false}
-                          src={item?.proposal?.proposer_image?.length ? item?.proposal?.proposer_image : avatarList[index % 4]} />
-                        <span>{item?.proposal?.proposer_name}</span>
-                      </Flex>
-                      <Status status={item?.proposal?.status} />
-                    </Flex>
-                    <Flex style={{ padding: '0 18px' }}>
-                      <Typography.Text ellipsis className={'desc'}>
-                        {item?.proposal?.title}
-                      </Typography.Text>
-                    </Flex>
-                    <Flex style={{ padding: '0 18px' }}>
-                      <Typography.Text className={'expire'}>
-                        {`# Expire ${moment.unix(item?.proposal?.expire_timestamp || 0).format('YYYY-MM-DD HH:mm:ss')}`}
-                      </Typography.Text>
-                    </Flex>
-                    <Flex align={'center'} style={{ padding: '0 18px', marginTop: '-30px' }} flex={1}>
-                      {item?.proposal?.status !== 2
-                        ? <ProgressBar passPercent={getPassPercent(item) || 0} />
-                        : <Flex align={'center'}>
-                          <Image preview={false} style={{ marginTop: '-4px', paddingRight: '4px' }} src={image32} />
-                          <span style={{
-                            fontFamily: 'Inter',
-                            fontWeight: 400,
-                            fontSize: '18px',
-                            lineHeight: '22px',
-                            letterSpacing: 0,
-                          }}>{`${item?.discussionCnt} Discussions >>`}</span>
-                        </Flex>}
-                    </Flex>
-                    <Flex>
-                      <BottomProgressBar status={item?.proposal?.status} />
-                    </Flex>
-                  </Flex>
-                </StyledCard>
-              </Col>
-            )}
-            request={async (params) => {
+            </Col>
+          )}
+          request={async (params) => {
 
-              const res = await proposals(
-                {
-                  page: params?.current || 1,
-                  pageSize: params?.pageSize || 6,
-                },
-              );
+            const res = await proposals(
+              {
+                page: params?.current || 1,
+                pageSize: params?.pageSize || 6,
+              },
+            );
 
-              setListTotal(res?.total || 0)
-              return {
-                data: res?.proposals || [],
-                success: !!res?.proposals,
-                total: res?.total || 0,
-              };
-            }}
-          ></ProList>
-        </div>
+            setListTotal(res?.total|| 0)
+            return {
+              data: res?.proposals || [],
+              success: !!res?.proposals,
+              total: res?.total|| 0,
+            };
+          }}
+        ></ProList>
       </div>
       <ApplyProposal onSuccess={() => console.log('success,refresh!')} />
     </PageContainer>

@@ -40,7 +40,7 @@ const ProposalDetail: React.FC = () => {
       <div style={{ padding: '16px 70px', background: 'white' }}>
         <Flex style={{marginTop:'50px'}} align={'center'}>
           <Image width={100} height={100} preview={false}
-                 src={avatarList[Math.floor(Math.random() * avatarList.length)]} />
+                 src={agentDetailData?.agent?.head_photo?agentDetailData?.agent?.head_photo:avatarList[Math.floor(Math.random() * avatarList.length)]} />
           <span className={'name'}>{agentDetailData?.agent?.name}</span>
         </Flex>
         <Typography.Paragraph className={'desc'}>

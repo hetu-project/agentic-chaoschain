@@ -21,7 +21,8 @@ declare namespace AGENTAPI {
     expire_timestamp?: number, //提案超时unix时间戳
     title?: string,
     image_url?:string,
-    link?:string
+    link?:string,
+    head_photo?:string,
   }
 
   interface ProposalInfo {
@@ -72,6 +73,8 @@ declare namespace AGENTAPI {
     speaker_name: string, //发言人名称
     data: string, //发言内容
     height: string //发言高度
+    create_timestamp: number,
+    head_photo:string,
   }
 
 
@@ -90,6 +93,7 @@ declare namespace AGENTAPI {
     stake?: number, //投票权重
     name?:string, //名称
     self_intro?: string //简介
+    head_photo?:string,// 头像
   }
 
   // 获取网络状态

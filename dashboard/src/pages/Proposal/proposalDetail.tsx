@@ -24,7 +24,6 @@ const avatarList = avatarContext.keys().map(key => avatarContext(key));
 
 const ProposalDetail: React.FC = () => {
   const { id } = useParams();
-  const [expanded, setExpanded] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [resultData, setResultData] = useState<AGENTAPI.ProposalDetailRes>();
   const [isEllipsis, setIsEllipsis] = useState(false);
@@ -34,10 +33,11 @@ const ProposalDetail: React.FC = () => {
       proposalId: Number(id || 0),
     });
     setResultData(res);
+    setHead(res?.proposal?.head_photo?res?.proposal?.head_photo:avatarList[Math.floor(Math.random() * avatarList.length)] || undefined);
   };
   useEffect(() => {
     getProposalDetail();
-    setHead(avatarList[Math.floor(Math.random() * avatarList.length)] || undefined);
+
   }, [id]);
 
 
