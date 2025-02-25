@@ -136,9 +136,9 @@ func (c *ChainIndexer) handleEventGrant(ctx context.Context, event abci.Event, h
 		Name:     ev.Name,
 	}
 
-	cli, err := NewMockClient(ev.AgentUrl, c.logger)
+	cli, err := NewElizaClient(ev.AgentUrl, c.logger)
 	if err != nil {
-		c.logger.Error("new mock client fail", "err", err)
+		c.logger.Error("new eliza client fail", "err", err)
 	} else {
 		hp, err := cli.GetHeadPhoto(ctx)
 		if err != nil {
@@ -400,9 +400,9 @@ func (c *ChainIndexer) Start(ctx context.Context) {
 			Name:     acc.Name,
 		}
 
-		cli, err := NewMockClient(val.AgentUrl, c.logger)
+		cli, err := NewElizaClient(val.AgentUrl, c.logger)
 		if err != nil {
-			c.logger.Error("new mock client fail", "err", err)
+			c.logger.Error("new eliza client fail", "err", err)
 		} else {
 			hp, err := cli.GetHeadPhoto(ctx)
 			if err != nil {
@@ -594,9 +594,9 @@ func (c *ChainIndexer) fillAgentSelfIntro() {
 	for _, a := range agents {
 		if a.AgentUrl != "" {
 			if _, ok := c.Clients[a.Address]; !ok {
-				client, err := NewMockClient(a.AgentUrl, c.logger)
+				client, err := NewElizaClient(a.AgentUrl, c.logger)
 				if err != nil {
-					c.logger.Error("new mock client fail", "err", err)
+					c.logger.Error("new eliza client fail", "err", err)
 					continue
 				}
 				c.Clients[a.Address] = client
