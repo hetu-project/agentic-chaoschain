@@ -3,6 +3,7 @@ import { Divider, Flex, Image, Typography } from 'antd';
 import EChartsReact from '@/components/BaseCharts';
 import { EChartsOption } from 'echarts';
 import './style.less'
+import moment from 'moment';
 
 interface Props {
   status: number;
@@ -59,17 +60,6 @@ const Discussions: React.FC<Props> = (props) => {
 
   return (
     <div>
-      <Flex className={'discussions-title'}>Discussions</Flex>
-      {decisionStep?.discussions?.map((item, index) => <Flex className={'discussions-item'} vertical key={`discussions-${index}`}>
-        <Flex align={'center'} className={'discussions-item-header'}>
-          <Image width={80} height={80} preview={false}
-                 src={avatarList[index % 4]} />
-          <span style={{marginLeft:'8px'}}>{item?.speaker_name}</span>
-        </Flex>
-        <Typography.Paragraph className={'discussions-item-content'}>
-          {item?.data}
-        </Typography.Paragraph>
-      </Flex>)}
       {(decisionStep?.decisionPass > 0 || decisionStep?.decisionReject > 0) && <>
         <Flex className={'discussions-title'}>Decision</Flex>
         <Flex>
@@ -79,6 +69,21 @@ const Discussions: React.FC<Props> = (props) => {
           />
         </Flex>
       </>}
+
+      <Flex className={'discussions-title'}>Discussions</Flex>
+      {decisionStep?.discussions?.map((item, index) => <Flex className={'discussions-item'} vertical key={`discussions-${index}`}>
+        <Flex align={'center'} className={'discussions-item-header'}>
+          <Image width={80} height={80} preview={false}
+                 src={item?.head_photo?item?.head_photo:avatarList[index % 4]} />
+          <Flex vertical style={{marginTop:'20px'}} justify={'end'}>
+            <span style={{marginLeft:'8px'}}>{item?.speaker_name}</span>
+            <span style={{marginLeft:'8px',marginTop:'8px'}}>{moment.unix(item?.create_timestamp || 0).format('YYYY-MM-DD HH:mm:ss')}</span>
+          </Flex>
+        </Flex>
+        <Typography.Paragraph className={'discussions-item-content'}>
+          {item?.data}
+        </Typography.Paragraph>
+      </Flex>)}
       {showLine && <Divider style={{background:'#000000'}} />}
     </div>
   );
