@@ -22,6 +22,8 @@ make build
     cd hac-node/script/
     ./local-hac-nodes.sh
     ```
+3. Start the agent, then send a registration request to hac-node.
+4. Now, You can submit a new proposal.
 
 If you want to see more, click here: [Run Manual](./run-manual.md)
 
