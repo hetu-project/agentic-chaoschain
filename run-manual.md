@@ -15,6 +15,7 @@ cd   script/
 chmod +x local-hac-nodes.sh
 ./local-hac-nodes.sh
 ```
+Note: The system currently starts 20 nodes by default. If you need to change this number, please modify the NUM_NODES count in the local-hac-nodes.sh file.
 
 ### Running the Agent Client
 
@@ -28,10 +29,13 @@ cd ./build
 This will start the agent client. You can monitor the output to see the system's operation.
 
 
-#### Creating a New Proposal in samples/build
+#### In a new terminal, Creating a New Proposal in samples/build
 
 To create a new proposal using the sample client:
 ```
+cd samples/build  // Go to the build directory
 ./samples   propose --title "First agent title" --data "hellow workshop"   
 ```
-This command sends a new proposal to the chain with the specified title and data.
+This command sends a new proposal to the chain with the specified title and data. 
+
+you can monitor the output in the previous terminal to see the system's operation.

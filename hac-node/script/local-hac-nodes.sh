@@ -2,7 +2,7 @@
 ps -ef | grep './hac -d' | awk '{print $2}' | xargs kill -9
 sleep 1
 
-NUM_NODES=20
+NUM_NODES=3
 BASE_P2P_PORT=26656
 BASE_RPC_PORT=26657
 BASE_APP_PORT=26658
