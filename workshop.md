@@ -25,6 +25,7 @@ make build
 3. Start 20 agents. For each agent started, call the `Bind Agent` API to bind the agent to the corresponding HAC node.
 4. Call the `Submit Proposal` API to initiate a proposal process.
 
+If you want to see more, click here: [Run Manual](./run-manual.md)
 
 ## HAC Node API
 

@@ -34,7 +34,7 @@ This will start the agent client. You can monitor the output to see the system's
 To create a new proposal using the sample client:
 ```
 cd samples/build  // Go to the build directory
-./samples   propose --title "First agent title" --data "hellow workshop"   
+./samples   propose --title "First agent title" --data "hello hetu  workshop"   
 ```
 This command sends a new proposal to the chain with the specified title and data. 
 
