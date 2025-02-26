@@ -19,8 +19,8 @@ make build
 
     These 20 HAC nodes will provide API services sequentially on ports 8631, 8632, ... ,8650
     ```
-    cd hac-node/build
-    ./make20.bach
+    cd hac-node/script/
+    ./local-hac-nodes.sh
     ```
 3. Start 20 agents. For each agent started, call the `Bind Agent` API to bind the agent to the corresponding HAC node.
 4. Call the `Submit Proposal` API to initiate a proposal process.
