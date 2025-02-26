@@ -15,7 +15,7 @@ cd   script/
 chmod +x local-hac-nodes.sh
 ./local-hac-nodes.sh
 ```
-Note: The system currently starts 20 nodes by default. If you need to change this number, please modify the NUM_NODES count in the local-hac-nodes.sh file.
+Note: The system currently starts 3 nodes by default. If you need to change this number, please modify the NUM_NODES count in the local-hac-nodes.sh file.
 
 ### Running the Agent Client
 
