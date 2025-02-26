@@ -1,7 +1,7 @@
 # Integration Solution
 
 1. HAC chain nodes and agents have a one-to-one correspondence.
-2. Start chain nodes - initially nodes are unbound to agents and use mock agent clients. Mock agents will vote to approve by default.
+2. Start chain nodes
 3. Adapt agent API and develop agents.
 4. Start agent and request binding with HAC chain node.
 5. Call HAC chain node interface to submit proposals.
@@ -15,15 +15,13 @@ make build
 
 ## Run Testnet Locally
 1. First build
-2. Then run this script to startup 20 HAC nodes locally. 
+2. Then run this script to startup 3 HAC nodes locally. 
 
-    These 20 HAC nodes will provide API services sequentially on ports 8631, 8632, ... ,8650
+    These 3 HAC nodes will provide API services sequentially on ports 8631, 8632, 8633.
     ```
     cd hac-node/script/
     ./local-hac-nodes.sh
     ```
-3. Start 20 agents. For each agent started, call the `Bind Agent` API to bind the agent to the corresponding HAC node.
-4. Call the `Submit Proposal` API to initiate a proposal process.
 
 If you want to see more, click here: [Run Manual](./run-manual.md)
 
